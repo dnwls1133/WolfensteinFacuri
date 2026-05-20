@@ -59,6 +59,12 @@ void GameFramework::OnCreate(HINSTANCE hInstance, HWND hMainWnd)
 	POINT ptCenter = { m_nClientWidth / 2, m_nClientHeight / 2 };
 	ClientToScreen(m_hWnd, &ptCenter);
 	m_ptCenterCursorPos = ptCenter;
+
+	POINT mousePos{};
+	::GetCursorPos(&mousePos);
+	::ScreenToClient(m_hWnd, &mousePos);
+	m_ptPrevCursorPos = mousePos;
+
 }
 
 void GameFramework::OnDestroy()
@@ -316,8 +322,23 @@ void GameFramework::ReleaseObjects()
 }
 void GameFramework::ProcessInput()
 {
+	if (!m_pScene) return;
+
+	::ZeroMemory(&m_inputState.keys, sizeof(m_inputState.keys));
+	::GetKeyboardState(m_inputState.keys);
+
+	POINT mousePos{};
+	::GetCursorPos(&mousePos);
+	::ScreenToClient(m_hWnd, &mousePos);
+
+	m_inputState.mousePosition = mousePos;
+	m_inputState.mouseDelta.x = mousePos.x - m_ptPrevCursorPos.x;
+	m_inputState.mouseDelta.y = mousePos.y - m_ptPrevCursorPos.y;
+	m_inputState.isMouseLocked = m_bIsMousedLocked;
 	
-	m_pScene->ProcessInput(TIMER->GetTimeElapsed());
+	m_ptPrevCursorPos = mousePos;
+
+	m_pScene->ProcessInput(m_inputState,TIMER->GetTimeElapsed());
 
 	
 }

@@ -116,43 +116,42 @@ void GalagaScene::Animate(float fElapsedTime)
 	CScene::Animate(fElapsedTime);
 }
 
-void GalagaScene::ProcessInput(float fElapsedTime)
+void GalagaScene::ProcessInput(const InputState& InputState, float fElapsedTime)
 {
-	static UCHAR pKeyBuffer[256];
-	if (GetKeyboardState(pKeyBuffer))
+	const UCHAR* pKeyBuffer = InputState.keys;
+	
+	if (pKeyBuffer[VK_LEFT] & 0x80)
 	{
-		if (pKeyBuffer[VK_LEFT] & 0x80)
-		{
-			m_pPlayer->Rotate(0, 0, 0.01f); // 롤 회전 (좌회전)
-			m_pPlayer->Move(DIR_LEFT, 20); // 좌회전
+		m_pPlayer->Rotate(0, 0, 0.01f); // 롤 회전 (좌회전)
+		m_pPlayer->Move(DIR_LEFT, 20); // 좌회전
 
-		}
-		if (pKeyBuffer[VK_RIGHT] & 0x80)
-		{
-			m_pPlayer->Rotate(0, 0, -0.01f); // 롤 회전 (우회전)
-			m_pPlayer->Move(DIR_RIGHT, 20); // 우회전
+	}
+	if (pKeyBuffer[VK_RIGHT] & 0x80)
+	{
+		m_pPlayer->Rotate(0, 0, -0.01f); // 롤 회전 (우회전)
+		m_pPlayer->Move(DIR_RIGHT, 20); // 우회전
 
-		}
-		if (pKeyBuffer[VK_UP] & 0x80)
-		{
-			m_pPlayer->Move(DIR_FORWARD, 50); // 이동 속도
-		}
-		if (pKeyBuffer[VK_DOWN] & 0x80)
-		{
-			m_pPlayer->Move(DIR_BACKWARD, 50); // 이동 속도
-		}
-		if (pKeyBuffer[VK_CONTROL] & 0x80)
-		{
+	}
+	if (pKeyBuffer[VK_UP] & 0x80)
+	{
+		m_pPlayer->Move(DIR_FORWARD, 50); // 이동 속도
+	}
+	if (pKeyBuffer[VK_DOWN] & 0x80)
+	{
+		m_pPlayer->Move(DIR_BACKWARD, 50); // 이동 속도
+	}
+	if (pKeyBuffer[VK_CONTROL] & 0x80)
+	{
 
-			m_pPlayer->m_fLastFireTime += TIMER->GetTimeElapsed(); // 매 프레임마다 경과 시간을 누적
-			if (m_pPlayer->m_fLastFireTime >= m_pPlayer->m_fFireCooldown) // 쿨다운 시간이 지났는지 체크
-			{
-				m_pPlayer->m_fLastFireTime = 0.0f; // 발사 후 마지막 발사 시간 초기화
-				m_pPlayer->FireMissile(); // 미사일 발사
+		m_pPlayer->m_fLastFireTime += TIMER->GetTimeElapsed(); // 매 프레임마다 경과 시간을 누적
+		if (m_pPlayer->m_fLastFireTime >= m_pPlayer->m_fFireCooldown) // 쿨다운 시간이 지났는지 체크
+		{
+			m_pPlayer->m_fLastFireTime = 0.0f; // 발사 후 마지막 발사 시간 초기화
+			m_pPlayer->FireMissile(); // 미사일 발사
 
-			}
 		}
 	}
+	
 }
 
 void GalagaScene::BuildSceneObjects()

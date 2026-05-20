@@ -1,4 +1,5 @@
 #pragma once
+#include "InputState.h"
 #include "GameObject.h"
 #include "Camera.h"
 #include "Player.h"
@@ -93,7 +94,7 @@ public:
 	ID3D12RootSignature* GetGraphicsRootSignature() const { return m_pd3dGrahpicsRootSignature; }
 	
 	// 입력처리
-	virtual void ProcessInput(float fElapsedTime); // 입력 처리 함수 (예: 키보드, 마우스)
+	virtual void ProcessInput(const InputState& InputState, float fElapsedTime); // 입력 처리 함수 (예: 키보드, 마우스)
 
 
 	CPlayer* GetPlayer() { return m_pPlayer; }

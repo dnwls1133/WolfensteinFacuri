@@ -43,7 +43,7 @@ CScene::~CScene()
 	m_particleInstanceBuffer.Release();
 }
 
-void CScene::ProcessInput(float fElapsedTime)
+void CScene::ProcessInput(const InputState& InputState, float fElapsedTime)
 {
 	
 }

@@ -31,6 +31,9 @@
     <Filter Include="헤더 파일\Manager">
       <UniqueIdentifier>{d9a1793e-4205-4303-aa2b-0e6b6b3b38eb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="헤더 파일\Helper">
+      <UniqueIdentifier>{6407b124-ea10-4ea9-a89e-0079daa1b307}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -87,9 +90,6 @@
     <ClInclude Include="Player.h">
       <Filter>헤더 파일\Object</Filter>
     </ClInclude>
-    <ClInclude Include="GraphicsHelpers.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Shader.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -110,6 +110,12 @@
     </ClInclude>
     <ClInclude Include="Text.h">
       <Filter>헤더 파일\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="GraphicsHelpers.h">
+      <Filter>헤더 파일\Helper</Filter>
+    </ClInclude>
+    <ClInclude Include="InputState.h">
+      <Filter>헤더 파일\Helper</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

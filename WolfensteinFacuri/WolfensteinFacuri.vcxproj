@@ -136,6 +136,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CGameFramework.h" />
     <ClInclude Include="ColliderManager.h" />
+    <ClInclude Include="InputState.h" />
     <ClInclude Include="Text.h" />
     <ClInclude Include="define.h" />
     <ClInclude Include="Enemy.h" />

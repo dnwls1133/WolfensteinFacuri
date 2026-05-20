@@ -1,5 +1,5 @@
 #pragma once
-
+#include "InputState.h"
 
 
 // - GDI 더블 버퍼링(HDC/HBITMAP) -> D3D12 스왑체인 + 펜스 동기화로 교체
@@ -14,11 +14,14 @@ class CColliderManager;
 class GameFramework
 {
 private:
-
 	HINSTANCE			m_hInstance = NULL;
 	HWND				m_hWnd = NULL;
 	int					m_nClientWidth = FRAMEBUFFER_WIDTH;
 	int					m_nClientHeight = FRAMEBUFFER_HEIGHT;
+
+
+
+
 
 	// [D3D12 추가] DXGI / 디바이스 / 스왑체인
 	IDXGIFactory4*		m_pDXGIFactory = NULL;
@@ -63,9 +66,12 @@ public:
 	CCamera* m_pCamera{ NULL };
 
 private:
-	// 입력 및 프레임 제어
+	// 입력 제어
 	POINT m_ptCenterCursorPos;
+	POINT m_ptPrevCursorPos{ 0,0 };
 	bool m_bIsMousedLocked = false;
+
+	InputState m_inputState;
 
 	_TCHAR						m_pszFrameRate[50];
 	float endTimer = 0.0f;

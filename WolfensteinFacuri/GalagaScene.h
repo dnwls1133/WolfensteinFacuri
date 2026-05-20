@@ -13,7 +13,7 @@ public:
     GalagaScene(CColliderManager* pCollider, CCamera* pCamera);
 	~GalagaScene() override = default;
 	virtual void Animate(float fElapsedTime) override;
-	virtual void ProcessInput(float fElapsedTime) override;
+	virtual void ProcessInput(const InputState& InputState, float fElapsedTime) override;
 protected:
 	void BuildSceneObjects() override;
 };
