@@ -1,0 +1,35 @@
+Plaintext
+# === Visual Studio 관련 임시 파일 ===
+.vs/
+*.user
+*.suo
+*.dbmdl
+*.jfm
+
+# === 컴파일 및 빌드 결과물 폴더 ===
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+# === 용량을 엄청나게 차지하는 임시 찌꺼기 파일들 ===
+*.pch
+*.ipch
+*.iobj
+*.ipdb
+*.ilk
+*.pdb
+*.idb
+*.tlog
+*.log
+*.sdf
+*.opensdf
+*.sqlite3
+*.obj
+*.exe
