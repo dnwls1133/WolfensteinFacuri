@@ -53,6 +53,32 @@ void CCamera::GenerateProjectionMatrix(float fNearPlane,float fFarPlane, float f
 
 }
 
+XMFLOAT3 CCamera::ScreenToWorld(float nScreenX, float nScreenY, float fScreenZ)
+{
+	// 1. 역행렬 계산 (뷰 행렬과 투영 행렬의 곱의 역행렬)
+	XMMATRIX mtxViewProj = XMLoadFloat4x4(&m_xmf4x4ViewProject);
+	XMMATRIX invViewProj = XMMatrixInverse(nullptr, mtxViewProj);
+
+	// 2. 화면 좌표를 NDC(정규화된 디바이스 좌표)로 변환
+	// X,Y [-1, 1], Z [0, 1] 범위로 변환
+	float ndcX = (nScreenX / m_Viewport.m_nWidth) * 2.0f - 1.0f;
+	float ndcY = 1.0f - (nScreenY / m_Viewport.m_nHeight) * 2.0f; // Y축 반전
+	float ndcZ = fScreenZ;
+
+	// NDC 좌표를 동차 좌표로 변환
+	XMVECTOR vNDCPos = XMVectorSet(ndcX, ndcY, ndcZ, 1.0f);
+
+
+	// 동차 좌표를 월드 좌표로 변환
+	XMVECTOR worldPos = XMVector4Transform(vNDCPos, invViewProj);
+
+	float w = XMVectorGetW(worldPos);
+	worldPos = XMVectorScale(worldPos, 1.0f / w); // 동차 좌표의 w로 나누기
+	XMFLOAT3 xmf3World;
+	XMStoreFloat3(&xmf3World, worldPos);
+	return xmf3World;
+}
+
 void CCamera::SetViewport(int nLeft, int nTop, int nWidth, int nHeight)
 {
 	m_Viewport.SetViewport(nLeft, nTop, nWidth, nHeight);

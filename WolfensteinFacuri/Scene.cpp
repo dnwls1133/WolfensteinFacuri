@@ -7,10 +7,10 @@
 #include "ColliderManager.h"
 
 
-
-static const std::vector<std::string> textMeshNames = {
-	"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
-	"N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
+static const std::vector<std::string> TextMeshNames = {
+	"WOLFENSTEIN",
+	"PRESSSTART",
+	"GAMEOVER"
 };
 
 CScene::CScene(CColliderManager* pCollider, CCamera* pCamera)
@@ -140,12 +140,14 @@ void CScene::BuildSharedResources()
 	m_pParticleMesh = new CCubeMesh(m_pd3dDevice, m_pd3dCommandList, 0.2f);
 	m_pParticleMesh->AddRef();
 
-	for(int i = 0; i < 24; i++)
-	{
-		C3DTextMesh* pTextMesh = new C3DTextMesh(m_pd3dDevice, m_pd3dCommandList, textMeshNames[i], 1.0f, RANDOM_COLOR);
-		pTextMesh->AddRef();
-		m_vpTextMeshes.push_back(pTextMesh);
-	}
+	
+	C3DTextMesh* pTextMesh = new C3DTextMesh(m_pd3dDevice, m_pd3dCommandList, "WOLFENSTEIN", 1.0f, RANDOM_COLOR);
+	pTextMesh->AddRef();
+	m_vpTextMeshes.push_back(pTextMesh);
+	
+	C3DTextMesh* pTextMesh2 = new C3DTextMesh(m_pd3dDevice, m_pd3dCommandList, "PRESS START", 0.5f, RANDOM_COLOR);
+	pTextMesh2->AddRef();
+	m_vpTextMeshes.push_back(pTextMesh2);
 
 	m_pInstancedShader = new CInstancedShader();
 	m_pInstancedShader->CreateShader(m_pd3dDevice, m_pd3dGrahpicsRootSignature);

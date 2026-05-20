@@ -292,7 +292,7 @@ void GameFramework::BuildObjects()
 	// 1. 카메라 생성 및 투영 행렬 설정
 	m_pCamera = new CCamera();
 	m_pCamera->SetViewport(0, 0, m_nClientWidth, m_nClientHeight);
-	m_pCamera->GenerateProjectionMatrix(1.0f, 100.0f, 60.0f);
+	m_pCamera->GenerateProjectionMatrix(1.0f, 500.0f, 60.0f);
 	m_pCamera->CreateShaderVariables(m_pd3dDevice, m_pd3dCommandList);
 	
 	// 2. 플레이어 생성

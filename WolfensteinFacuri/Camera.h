@@ -71,6 +71,11 @@ public:
 	void GenerateViewMatrix();
 	void GenerateProjectionMatrix(float fNearPlane,float fFarPlane, float fFOVAngle);
 
+
+	// ScreenToWorld 좌표 변환
+	XMFLOAT3 ScreenToWorld(float nScreenX, float nScreenY, float fScreenZ);
+
+
 	// 변경 D3D12: 뷰포트와 시저 렉트 설정 함수 추가
 	void SetViewport(int nLeft, int nTop, int nWidth, int nHeight);
 

@@ -34,6 +34,9 @@
     <Filter Include="헤더 파일\Helper">
       <UniqueIdentifier>{6407b124-ea10-4ea9-a89e-0079daa1b307}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\Helper">
+      <UniqueIdentifier>{27d94180-a0aa-46ba-b343-6c0833392d39}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -117,6 +120,9 @@
     <ClInclude Include="InputState.h">
       <Filter>헤더 파일\Helper</Filter>
     </ClInclude>
+    <ClInclude Include="PickingHelper.h">
+      <Filter>헤더 파일\Helper</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WolfensteinFacuri.cpp">
@@ -161,9 +167,6 @@
     <ClCompile Include="Missile.cpp">
       <Filter>소스 파일\Object</Filter>
     </ClCompile>
-    <ClCompile Include="GraphicsHelpers.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Shader.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -184,6 +187,12 @@
     </ClCompile>
     <ClCompile Include="Text.cpp">
       <Filter>소스 파일\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="GraphicsHelpers.cpp">
+      <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="PickingHelper.cpp">
+      <Filter>소스 파일\Helper</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

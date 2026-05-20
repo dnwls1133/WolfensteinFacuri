@@ -15,6 +15,7 @@ enum ObjectType
 	OBJ_WALL,
 	OBJ_ITEM,
 	OBJ_EFFECT,
+	OBJ_TEXT,
 	OBJ_MONSTER,
 	NONE
 };

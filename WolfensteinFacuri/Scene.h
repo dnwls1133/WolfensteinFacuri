@@ -70,6 +70,8 @@ protected:
 public:
 
 	CGameObject* GetPlayer() const { return m_pPlayer; }
+	CCamera* GetCamera() const { return m_pCamera; }
+
 
 	CMissileMesh* GetMissileMesh() const { return m_pMissileMesh; }
 	CMesh* GetParticleMesh() const { return m_pParticleMesh; }

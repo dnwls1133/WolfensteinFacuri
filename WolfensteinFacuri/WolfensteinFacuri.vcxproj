@@ -137,6 +137,7 @@
     <ClInclude Include="CGameFramework.h" />
     <ClInclude Include="ColliderManager.h" />
     <ClInclude Include="InputState.h" />
+    <ClInclude Include="PickingHelper.h" />
     <ClInclude Include="Text.h" />
     <ClInclude Include="define.h" />
     <ClInclude Include="Enemy.h" />
@@ -165,6 +166,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CGameFramework.cpp" />
     <ClCompile Include="ColliderManager.cpp" />
+    <ClCompile Include="PickingHelper.cpp" />
     <ClCompile Include="Text.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="GalagaScene.cpp" />
