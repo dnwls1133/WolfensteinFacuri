@@ -327,6 +327,15 @@ void GameFramework::ProcessInput()
 	::ZeroMemory(&m_inputState.keys, sizeof(m_inputState.keys));
 	::GetKeyboardState(m_inputState.keys);
 
+	if (m_bConsumeUntilMouseUp) {
+		if(!(m_inputState.keys[VK_LBUTTON] & 0x80)) 
+			m_bConsumeUntilMouseUp = false;
+		else
+			m_inputState.keys[VK_LBUTTON] = 0; 
+	}
+
+
+
 	POINT mousePos{};
 	::GetCursorPos(&mousePos);
 	::ScreenToClient(m_hWnd, &mousePos);
@@ -359,6 +368,8 @@ void GameFramework::FrameAdvance()
 		ID3D12CommandList* ppd3dCommandLists[] = { m_pd3dCommandList };
 		m_pd3dCommandQueue->ExecuteCommandLists(1, ppd3dCommandLists);
 		WaitForGpuComplete();
+
+		m_bConsumeUntilMouseUp = true;
 
 	}
 

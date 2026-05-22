@@ -9,18 +9,15 @@ public:
 	CPlayer();
 	virtual ~CPlayer();
 
-private:
+protected:
 	CCamera* m_pCamera{ NULL }; 
-	float m_fSpeed = 50.0f; 
-	float m_fRotationSpeed = 90.0f; 
 
-	int m_nHealth = 10;
+
+	int m_nHealth = 10; 
 	float m_fPlayTime = 0.0f;
 	bool m_playerDestroyed = false; // 플레이어가 파괴되었는지 여부를 나타내는 플래그
 	bool m_playerWon = false;
-public:
-	float m_fFireCooldown = 0.1f; 
-	float m_fLastFireTime = 0.0f; 
+
 
 public:
 	void SetCamera(CCamera* pCamera) { m_pCamera = pCamera; }
@@ -34,7 +31,7 @@ public:
 
 
 
-	void FireMissile(); // 미사일 발사 함수
+	//void FireMissile(); // 미사일 발사 함수
 
 	virtual void Update() override;
 
@@ -47,7 +44,7 @@ public:
 		}
 		if (pOther->GetObjectType() == OBJ_WALL || pOther->GetObjectType() == OBJ_MONSTER)
 		{
-			m_nHealth = 0; // 벽과 충돌 시 체력 감소
+			//m_nHealth = 0; // 벽과 충돌 시 체력 감소
 		}
 		
 	}

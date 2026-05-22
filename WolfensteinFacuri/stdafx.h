@@ -19,6 +19,9 @@
 #include <tchar.h>
 #include <math.h>
 
+
+#include <fstream>
+#include <sstream>
 // STL 컨테이너	및 알고리즘 헤더 파일입니다.
 #include <memory>
 #include <vector>

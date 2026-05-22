@@ -45,6 +45,8 @@ CScene::~CScene()
 
 	if (m_pInstancedShader) m_pInstancedShader->Release();
 	m_particleInstanceBuffer.Release();
+	m_wallInstanceBuffer.Release();
+	m_floorInstanceBuffer.Release();
 
 	if (m_pWireShader) m_pWireShader->Release();
 	if (m_pWireCubeMesh) m_pWireCubeMesh->Release();
@@ -205,7 +207,7 @@ void CScene::AddObject(CGameObject* pObject)
 		return;
 	}
 
-	if (pObject && m_pd3dDevice)
+	if (pObject && m_pd3dDevice && !pObject->IsInstancedOnly())
 	{
 		pObject->SetShader(m_pShader);
 		pObject->CreateShaderVariables(m_pd3dDevice, m_pd3dCommandList);
@@ -358,8 +360,12 @@ void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera
 			continue;
 		}
 
+
+		if (m_vpObjects[i]->IsInstancedOnly()) continue;
+
 		// 일반 오브젝트: 즉시 렌더
 		m_vpObjects[i]->Render(pd3dCommandList, pCamera);
+	
 	}
 
 	// 4) 플레이어 (절두체 안에 있으면 렌더)
@@ -390,6 +396,20 @@ void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera
 		
 	}
 	
+	if (m_nWallInstances > 0 && m_pInstancedShader && m_pWallMesh)
+	{
+		m_pInstancedShader->Render(pd3dCommandList, pCamera);
+		m_wallInstanceBuffer.Bind(pd3dCommandList);
+		m_pWallMesh->RenderInstanced(pd3dCommandList, m_nWallInstances);
+	}
+
+	if (m_nFloorInstances > 0 && m_pInstancedShader && m_pFloorMesh)
+	{
+		m_pInstancedShader->Render(pd3dCommandList, pCamera);
+		m_floorInstanceBuffer.Bind(pd3dCommandList);
+		m_pFloorMesh->RenderInstanced(pd3dCommandList, m_nFloorInstances);
+	}
+
 
 	// 6) 디버그 OOBB 와이어프레임 (F1 토글)
 	if (CScene::s_bDebugWireframe)

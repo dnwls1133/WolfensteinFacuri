@@ -59,6 +59,12 @@ protected:
 	// ��ƼŬ �ν��Ͻ�
 	CInstancedShader* m_pInstancedShader = NULL;
 	CInstancebuffer   m_particleInstanceBuffer;
+	CInstancebuffer   m_wallInstanceBuffer;
+	CInstancebuffer   m_floorInstanceBuffer;
+
+	UINT m_nWallInstances = 0;
+	UINT m_nFloorInstances = 0;
+
 
 	// [추가] OOBB 와이어프레임 디버그 자원
 	CWireframeShader* m_pWireShader = NULL;

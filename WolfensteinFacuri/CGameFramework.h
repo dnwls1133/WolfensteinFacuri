@@ -73,6 +73,8 @@ private:
 
 	InputState m_inputState;
 
+	bool m_bConsumeUntilMouseUp = false;
+
 	_TCHAR						m_pszFrameRate[50];
 	float endTimer = 0.0f;
 
