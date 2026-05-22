@@ -123,6 +123,15 @@
     <ClInclude Include="PickingHelper.h">
       <Filter>헤더 파일\Helper</Filter>
     </ClInclude>
+    <ClInclude Include="MapChoiceScene.h">
+      <Filter>헤더 파일\Class</Filter>
+    </ClInclude>
+    <ClInclude Include="ChoiceCube.h">
+      <Filter>헤더 파일\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="WFSMap1Scene.h">
+      <Filter>헤더 파일\Class</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WolfensteinFacuri.cpp">
@@ -193,6 +202,15 @@
     </ClCompile>
     <ClCompile Include="PickingHelper.cpp">
       <Filter>소스 파일\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="MapChoiceScene.cpp">
+      <Filter>소스 파일\Class</Filter>
+    </ClCompile>
+    <ClCompile Include="ChoiceCube.cpp">
+      <Filter>소스 파일\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="WFSMap1Scene.cpp">
+      <Filter>소스 파일\Class</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

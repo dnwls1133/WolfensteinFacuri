@@ -1,7 +1,8 @@
 #include "stdafx.h"
 #include "Text.h"
-#include "TitleScene.h"
+#include "MapChoiceScene.h"
 #include "GalagaScene.h"
+#include "TitleScene.h"
 
 
 
@@ -108,7 +109,7 @@ void TitleScene::ProcessInput(const InputState& InputState, float fElapsedTime)
 			// 선택된 객체가 있으면 처리
 			if (pSelectedObject && dynamic_cast<CText*>(pSelectedObject)->GetTextType() == TEXT_PRESSSTART)
 			{
-				SCENE_MANAGER->ChangeScene(new GalagaScene(m_pColliderManager, m_pCamera),m_pd3dDevice, m_pd3dCommandList);
+				SCENE_MANAGER->RequestSceneChange(new MapChoiceScene(m_pColliderManager, m_pCamera));
 			}
 		
 
@@ -144,6 +145,7 @@ void TitleScene::BuildSceneObjects()
 	pTitleText->SetShader(m_pShader);
 	pTitleText->CreateShaderVariables(m_pd3dDevice, m_pd3dCommandList);
 	pTitleText->SetColor(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.f)); // 텍스트 색상 설정
+	pTitleText->GenerateBoundingBox(); // 텍스트 객체의 OOBB 생성
 	AddObject(pTitleText); // 씬에 텍스트 객체 추가
 
 	CText* pStartText = new CText(TEXT_PRESSSTART);
@@ -153,6 +155,7 @@ void TitleScene::BuildSceneObjects()
 	pStartText->SetShader(m_pShader);
 	pStartText->CreateShaderVariables(m_pd3dDevice, m_pd3dCommandList);
 	pStartText->SetColor(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.f)); // 텍스트 색상 설정
+	pStartText->GenerateBoundingBox(); // 텍스트 객체의 OOBB 생성
 	AddObject(pStartText); // 씬에 텍스트 객체 추가
 
 

@@ -39,6 +39,7 @@ void CGameObject::SetMesh(CMesh* pMesh)
 	if (m_pMesh) m_pMesh->Release();
 	m_pMesh = pMesh;
 	if (m_pMesh) m_pMesh->AddRef();
+	
 }
 
 void CGameObject::SetShader(CShader* pShader)
@@ -97,6 +98,11 @@ void CGameObject::CreateShaderVariables(ID3D12Device* pd3dDevice, ID3D12Graphics
 	// 매핑
 	m_pd3dcbGameObject->Map(0, NULL, (void**)&m_pcbMappedGameObject);
 
+	// [추가] 디버그 와이어프레임 전용 CB (별도 버퍼라 일반 패스와 충돌 없음)
+	m_pd3dcbDebug = ::CreateBufferResource(
+		pd3dDevice, pd3dCommandList, NULL, ncbElementSize
+		, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, NULL);
+	m_pd3dcbDebug->Map(0, NULL, (void**)&m_pcbMappedDebug);
 }
 
 
@@ -131,6 +137,14 @@ void CGameObject::ReleaseShaderVariables()
 		m_pd3dcbGameObject = NULL;
 	}
 	m_pcbMappedGameObject = NULL;
+
+	if (m_pd3dcbDebug)
+	{
+		m_pd3dcbDebug->Unmap(0, NULL);
+		m_pd3dcbDebug->Release();
+		m_pd3dcbDebug = NULL;
+	}
+	m_pcbMappedDebug = NULL;
 }
 
 // [변경]
@@ -164,4 +178,32 @@ void CGameObject::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pC
 
 
 
+}
+
+// [추가] OOBB 와이어프레임 디버그 렌더
+// - OOBB(Center/Extents/Orientation)로부터 World = Scale*Rot*Trans 구성
+// - 디버그 전용 CB(m_pd3dcbDebug)에 업로드 후 단위 큐브(±1) 메쉬를 와이어 PSO로 렌더
+void CGameObject::RenderDebugBox(ID3D12GraphicsCommandList* pd3dCommandList,
+	CMesh* pWireMesh, const XMFLOAT4& xmf4Color)
+{
+	if (!pWireMesh || !m_pcbMappedDebug) return;
+
+	// OOBB → World 행렬
+	XMVECTOR vExtents = XMLoadFloat3(&m_xmOOBB.Extents);
+	XMVECTOR vCenter = XMLoadFloat3(&m_xmOOBB.Center);
+	XMVECTOR vQuat = XMLoadFloat4(&m_xmOOBB.Orientation);
+
+	XMMATRIX mtxScale = XMMatrixScalingFromVector(vExtents);
+	XMMATRIX mtxRot = XMMatrixRotationQuaternion(vQuat);
+	XMMATRIX mtxTrans = XMMatrixTranslationFromVector(vCenter);
+	XMMATRIX mtxWorld = mtxScale * mtxRot * mtxTrans;
+
+	// HLSL은 열우선 → 전치하여 업로드
+	XMStoreFloat4x4(&m_pcbMappedDebug->m_xmf4x4World, XMMatrixTranspose(mtxWorld));
+	m_pcbMappedDebug->m_xmf4Color = xmf4Color;
+
+	pd3dCommandList->SetGraphicsRootConstantBufferView(0,
+		m_pd3dcbDebug->GetGPUVirtualAddress());
+
+	pWireMesh->Render(pd3dCommandList);
 }

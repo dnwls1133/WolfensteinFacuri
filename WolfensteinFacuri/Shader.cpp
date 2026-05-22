@@ -307,6 +307,28 @@ void CDiffusedShader::CreateShader(ID3D12Device* pd3dDevice, ID3D12RootSignature
 	CShader::CreateShader(pd3dDevice, pd3dRootSignature);
 }
 
+// ═════════════════════════════════════════════════════════
+// CWireframeShader : 디버그 OOBB 와이어프레임 전용 PSO
+// ═════════════════════════════════════════════════════════
+CWireframeShader::CWireframeShader() {}
+CWireframeShader::~CWireframeShader() {}
+
+D3D12_RASTERIZER_DESC CWireframeShader::CreateRasterizerState()
+{
+	D3D12_RASTERIZER_DESC d = CDiffusedShader::CreateRasterizerState();
+	d.FillMode = D3D12_FILL_MODE_WIREFRAME;
+	d.CullMode = D3D12_CULL_MODE_NONE;
+	return d;
+}
+
+D3D12_DEPTH_STENCIL_DESC CWireframeShader::CreateDepthStencilState()
+{
+	D3D12_DEPTH_STENCIL_DESC d = CDiffusedShader::CreateDepthStencilState();
+	d.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	return d;
+}
+
+
 CInstancedShader::CInstancedShader()
 {
 }

@@ -13,6 +13,9 @@ static const std::vector<std::string> TextMeshNames = {
 	"GAMEOVER"
 };
 
+// [추가] F1 디버그 와이어프레임 토글 상태 (CGameFramework에서 플립)
+bool CScene::s_bDebugWireframe = false;
+
 CScene::CScene(CColliderManager* pCollider, CCamera* pCamera)
 	: m_pColliderManager(pCollider), m_pCamera(pCamera)
 {
@@ -28,6 +31,7 @@ CScene::~CScene()
 	if (m_pShader) m_pShader->Release();
 	if (m_pd3dGrahpicsRootSignature) m_pd3dGrahpicsRootSignature->Release();
 
+	if (m_pCubeMesh) m_pCubeMesh->Release();
 	if (m_pMissileMesh) m_pMissileMesh->Release();
 	if (m_pPlayerMesh) m_pPlayerMesh->Release();
 	if (m_pFloorMesh) m_pFloorMesh->Release();
@@ -41,6 +45,9 @@ CScene::~CScene()
 
 	if (m_pInstancedShader) m_pInstancedShader->Release();
 	m_particleInstanceBuffer.Release();
+
+	if (m_pWireShader) m_pWireShader->Release();
+	if (m_pWireCubeMesh) m_pWireCubeMesh->Release();
 }
 
 void CScene::ProcessInput(const InputState& InputState, float fElapsedTime)
@@ -122,6 +129,9 @@ void CScene::BuildSharedResources()
 	m_pShader->CreateShader(m_pd3dDevice, m_pd3dGrahpicsRootSignature);
 	m_pShader->AddRef();
 
+	m_pCubeMesh = new CCubeMesh(m_pd3dDevice, m_pd3dCommandList, 50.0f);
+	m_pCubeMesh->AddRef();
+
 	m_pEnemyMesh = new CMutantMesh(m_pd3dDevice, m_pd3dCommandList, 1.0f);
 	m_pEnemyMesh->AddRef();
 
@@ -149,12 +159,28 @@ void CScene::BuildSharedResources()
 	pTextMesh2->AddRef();
 	m_vpTextMeshes.push_back(pTextMesh2);
 
+	C3DTextMesh* pTextMesh3 = new C3DTextMesh(m_pd3dDevice, m_pd3dCommandList, "1 STAGE ", 1.0f, RANDOM_COLOR);
+	pTextMesh3->AddRef();
+	m_vpTextMeshes.push_back(pTextMesh3);
+
+	C3DTextMesh* pTextMesh4 = new C3DTextMesh(m_pd3dDevice, m_pd3dCommandList, "2 STAGE", 1.0f, RANDOM_COLOR);
+	pTextMesh4->AddRef();
+	m_vpTextMeshes.push_back(pTextMesh4);
+
+
 	m_pInstancedShader = new CInstancedShader();
 	m_pInstancedShader->CreateShader(m_pd3dDevice, m_pd3dGrahpicsRootSignature);
 	m_pInstancedShader->AddRef();
 
 	m_particleInstanceBuffer.Create(m_pd3dDevice, 2048);
 
+	// [추가] OOBB 와이어프레임 디버그 자원 — F1 토글 시 사용
+	m_pWireShader = new CWireframeShader();
+	m_pWireShader->CreateShader(m_pd3dDevice, m_pd3dGrahpicsRootSignature);
+	m_pWireShader->AddRef();
+
+	m_pWireCubeMesh = new CCubeMesh(m_pd3dDevice, m_pd3dCommandList, 2.0f); // 정점 ±1
+	m_pWireCubeMesh->AddRef();
 }
 
 
@@ -347,15 +373,7 @@ void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera
 	// 5) 파티클 인스턴싱 렌더
 	if (!vEffectObjects.empty() && m_pInstancedShader && m_pParticleMesh)
 	{
-		// [디버그] 진단 메시지
-		static int s_frameCount = 0;
-		if (++s_frameCount % 60 == 0)  // 1초에 한 번만 출력
-		{
-			char msg[256];
-			sprintf_s(msg, "[Particle] EffectObjects=%d, Shader=%p, Mesh=%p\n",
-				(int)vEffectObjects.size(), m_pInstancedShader, m_pParticleMesh);
-			OutputDebugStringA(msg);
-		}
+		
 
 		m_pInstancedShader->Render(pd3dCommandList, pCamera);
 		m_particleInstanceBuffer.Begin();
@@ -365,31 +383,35 @@ void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera
 
 		UINT nInstanceCount = m_particleInstanceBuffer.GetCount();
 
-		// [디버그]
-		if (s_frameCount % 60 == 0)
-		{
-			char msg[256];
-			sprintf_s(msg, "[Particle] InstanceCount=%u\n", nInstanceCount);
-			OutputDebugStringA(msg);
-		}
-
-		if (nInstanceCount > 0)
-		{
-			m_particleInstanceBuffer.Bind(pd3dCommandList, 1);
+		if (nInstanceCount > 0) {
+			m_particleInstanceBuffer.Bind(pd3dCommandList);
 			m_pParticleMesh->RenderInstanced(pd3dCommandList, nInstanceCount);
 		}
+		
 	}
-	else
+	
+
+	// 6) 디버그 OOBB 와이어프레임 (F1 토글)
+	if (CScene::s_bDebugWireframe)
+		RenderDebugBoxes(pd3dCommandList, pCamera);
+}
+
+// [추가] 모든 활성 오브젝트와 플레이어의 OOBB를 와이어 큐브로 렌더
+void CScene::RenderDebugBoxes(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera)
+{
+	if (!m_pWireShader || !m_pWireCubeMesh) return;
+
+	// 와이어 PSO 바인딩 (모든 박스에 1회만)
+	m_pWireShader->Render(pd3dCommandList, pCamera);
+
+	const XMFLOAT4 kWhite(1.0f, 1.0f, 1.0f, 1.0f);
+
+	for (int i = 0; i < m_nObjects; ++i)
 	{
-		// [디버그] 가드에 걸린 경우
-		static int s_skipCount = 0;
-		if (++s_skipCount % 60 == 0)
-		{
-			char msg[256];
-			sprintf_s(msg, "[Particle] SKIPPED: empty=%d, shader=%p, mesh=%p\n",
-				vEffectObjects.empty() ? 1 : 0,
-				m_pInstancedShader, m_pParticleMesh);
-			OutputDebugStringA(msg);
-		}
+		CGameObject* p = m_vpObjects[i];
+		if (!p || p->IsDestroyed() || !p->IsActive()) continue;
+		p->RenderDebugBox(pd3dCommandList, m_pWireCubeMesh, kWhite);
 	}
+	if (m_pPlayer)
+		m_pPlayer->RenderDebugBox(pd3dCommandList, m_pWireCubeMesh, kWhite);
 }

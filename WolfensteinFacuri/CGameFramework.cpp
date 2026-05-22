@@ -346,6 +346,23 @@ void GameFramework::ProcessInput()
 void GameFramework::FrameAdvance()
 {
 	TIMER->Tick(60.0f); // 프레임 타이머 갱신
+
+	if (SCENE_MANAGER->HasPendingScene()) {
+		m_pd3dCommandAllocator->Reset();
+		m_pd3dCommandList->Reset(m_pd3dCommandAllocator, NULL);
+
+		CScene* pNextScene = SCENE_MANAGER->TakePendingScene();
+		SCENE_MANAGER->ChangeScene(pNextScene, m_pd3dDevice, m_pd3dCommandList);
+		m_pScene = SCENE_MANAGER->GetCurrentScene();
+
+		m_pd3dCommandList->Close();
+		ID3D12CommandList* ppd3dCommandLists[] = { m_pd3dCommandList };
+		m_pd3dCommandQueue->ExecuteCommandLists(1, ppd3dCommandLists);
+		WaitForGpuComplete();
+
+	}
+
+
 	if (SCENE_MANAGER->GetCurrentScene()->GetPlayer()->IsWon())
 	{
 		endTimer += TIMER->GetTimeElapsed();
@@ -492,6 +509,10 @@ LRESULT CALLBACK GameFramework::OnProcessingWindowMessage(HWND hWnd, UINT nMessa
 			m_bIsMousedLocked = false;
 			ReleaseCapture();
 			ShowCursor(TRUE);
+		}
+		else if (wParam == VK_F1) // [추가] F1: OOBB 와이어프레임 디버그 토글
+		{
+			CScene::s_bDebugWireframe = !CScene::s_bDebugWireframe;
 		}
 		break;
 	}

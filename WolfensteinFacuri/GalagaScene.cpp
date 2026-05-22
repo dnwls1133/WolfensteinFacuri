@@ -158,14 +158,18 @@ void GalagaScene::BuildSceneObjects()
 {
 	m_pPlayer = new CPlayer();
 	m_pPlayer->SetCamera(m_pCamera);
+	m_pPlayer->SetMesh(m_pPlayerMesh);
+	m_pPlayer->SetShader(m_pShader);
+	m_pPlayer->CreateShaderVariables(m_pd3dDevice, m_pd3dCommandList);
+	
 	m_pPlayer->SetPosition(0.0f, 0.0f, -100.0f);
+
 	m_pPlayer->SetObjectType(OBJ_PLAYER);
 	// 플레이어 색상 설정
 	m_pPlayer->SetColor(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
-	m_pPlayer->SetMesh(m_pPlayerMesh);
-	m_pPlayer->SetShader(m_pShader);
-	m_pPlayer->CreateShaderVariables(m_pd3dDevice, m_pd3dCommandList);
+	m_pPlayer->GenerateBoundingBox();
+
 
 	// ─────────────────────────────────────────────────────
 	// 4. 적 20개 생성 (기존 로직 동일 — Z축 방향으로 일렬 배치)
@@ -211,6 +215,7 @@ void GalagaScene::BuildSceneObjects()
 			float fPosX = (X - nMapWidth / 2.0f) * fChunkSize;
 			float fPosZ = (Z - nMapDepth / 2.0f) * fChunkSize;
 			pFloor->SetPosition(fPosX, -5.0f, fPosZ);
+			pFloor->GenerateBoundingBox();
 
 			pFloor->SetColor(RGB(100, 100, 20));
 			pFloor->SetObjectType(OBJ_FLOOR);

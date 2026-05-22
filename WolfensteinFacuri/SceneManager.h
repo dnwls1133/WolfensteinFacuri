@@ -22,10 +22,30 @@ public:
 
 private:
 	CScene* m_pCurrentScene{ nullptr }; // 현재 활성화된 씬의 포인터
+	CScene* m_pPendingScene{ nullptr }; // 씬 전환 대기 중인 씬의 포인터 
+
 
 public:
 	void SetCurrentScene(CScene* pScene) { m_pCurrentScene = pScene; }
 	CScene* GetCurrentScene() const { return m_pCurrentScene; }
+
+	void RequestSceneChange(CScene* pScene)
+	{
+		if (m_pPendingScene) {
+			delete m_pPendingScene;
+			m_pPendingScene = nullptr;
+		}
+		m_pPendingScene = pScene;
+	}
+
+	bool HasPendingScene() const { return m_pPendingScene != nullptr; }
+
+	CScene* TakePendingScene()
+	{
+		CScene* pScene = m_pPendingScene;
+		m_pPendingScene = nullptr;
+		return pScene;
+	}
 
 	void ChangeScene(CScene* pNewScene, ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList)
 	{

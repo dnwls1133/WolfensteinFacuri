@@ -574,7 +574,7 @@ C3DTextMesh::C3DTextMesh(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd
     float h = fScale * 0.5f;
     float charSpacing = fScale * 6.0f;
     float totalWidth = text.length() * charSpacing - fScale;
-    float startX = -totalWidth * 0.5f;
+	float startX = -totalWidth * 0.5f;
     int cubeIdx = 0;
     float cursorX = startX;
 

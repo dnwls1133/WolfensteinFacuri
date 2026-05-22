@@ -17,52 +17,57 @@ enum ObjectType
 	OBJ_EFFECT,
 	OBJ_TEXT,
 	OBJ_MONSTER,
+	OBJ_CHOICE,
 	NONE
 };
 
 class CGameObject
 {
 public:
-	static UINT g_NextObjectID; // ´ÙÀ½¿¡ »ı¼ºµÇ´Â °´Ã¼¿¡°Ô ºÎ¿©ÇÒ °íÀ¯ ID
-	UINT m_nObjectID; // °´Ã¼ÀÇ °íÀ¯ ID
+	static UINT g_NextObjectID; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ç´ï¿½ ï¿½ï¿½Ã¼ï¿½ï¿½ï¿½ï¿½ ï¿½Î¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ID
+	UINT m_nObjectID; // ï¿½ï¿½Ã¼ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ID
 	CGameObject();
 	virtual ~CGameObject();
 
 private:
-	CMesh* m_pMesh{ NULL };  // ³»°¡ »ç¿ëÇÒ ¸Ş½¬ÀÇ Æ÷ÀÎÅÍ
-	CShader* m_pShader{ NULL }; // [Ãß°¡] ·»´õ¸µ ¼ÎÀÌ´õ
+	CMesh* m_pMesh{ NULL };  // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ş½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	CShader* m_pShader{ NULL }; // [ï¿½ß°ï¿½] ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ì´ï¿½
 
 
-	DWORD m_dwColor;		 // °´Ã¼ÀÇ »ö»ó (ARGB)
+	DWORD m_dwColor;		 // ï¿½ï¿½Ã¼ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ARGB)
 	XMFLOAT4 m_xmf4Color; 
 
-	ObjectType m_ObjectType;  // °´Ã¼ÀÇ Å¸ÀÔ
+	ObjectType m_ObjectType;  // ï¿½ï¿½Ã¼ï¿½ï¿½ Å¸ï¿½ï¿½
 	bool m_IsActive = true;
 	bool m_IsDestroyed = false;
 
 protected:
-	XMFLOAT3	m_xmf3Position; // °´Ã¼ÀÇ À§Ä¡
-	XMFLOAT4    m_xmf4Rotation; // ÄõÅÍ´Ï¾ğ (x,y,z,w)
-	XMFLOAT4X4  m_xmf4x4World;    // ¿ùµå º¯È¯ Çà·Ä
+	XMFLOAT3	m_xmf3Position; // ï¿½ï¿½Ã¼ï¿½ï¿½ ï¿½ï¿½Ä¡
+	XMFLOAT4    m_xmf4Rotation; // ï¿½ï¿½ï¿½Í´Ï¾ï¿½ (x,y,z,w)
+	XMFLOAT4X4  m_xmf4x4World;    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¯ ï¿½ï¿½ï¿½
 
-	// [D3D12 Ãß°¡] Root CBV¿ë Upload Heap ¹öÆÛ
+	// [D3D12 ï¿½ß°ï¿½] Root CBVï¿½ï¿½ Upload Heap ï¿½ï¿½ï¿½ï¿½
 	ID3D12Resource* m_pd3dcbGameObject = NULL;
 	CB_GAMEOBJECT_INFO* m_pcbMappedGameObject = NULL;
 
+	// [ì¶”ê°€] ë””ë²„ê·¸ OOBB ì™€ì´ì–´í”„ë ˆì„ ì „ìš© CB (ì¼ë°˜ íŒ¨ìŠ¤ CBì™€ ë¶„ë¦¬í•˜ì—¬ ë™ê¸°í™” í•´ì €ë“œ ë°©ì§€)
+	ID3D12Resource* m_pd3dcbDebug = NULL;
+	CB_GAMEOBJECT_INFO* m_pcbMappedDebug = NULL;
+
 public:
 
-	BoundingOrientedBox m_xmOOBB; // °´Ã¼ÀÇ OOBB (Oriented Bounding Box)
+	BoundingOrientedBox m_xmOOBB; // ï¿½ï¿½Ã¼ï¿½ï¿½ OOBB (Oriented Bounding Box)
 
 	void GenerateBoundingBox();
 
-	// ¸Ş½Ã / ¼ÎÀÌ´õ ¼³Á¤
+	// ï¿½Ş½ï¿½ / ï¿½ï¿½ï¿½Ì´ï¿½ ï¿½ï¿½ï¿½ï¿½
 	void SetMesh(CMesh* pMesh);
 	void SetShader(CShader* pShader);
 
 
 	void SetColor(DWORD dwColor) { 
 		m_dwColor = dwColor;
-		// COLORREF (0x00BBGGRR) ¡æ XMFLOAT4 º¯È¯
+		// COLORREF (0x00BBGGRR) ï¿½ï¿½ XMFLOAT4 ï¿½ï¿½È¯
 		m_xmf4Color = XMFLOAT4(
 			GetRValue(dwColor) / 255.0f,
 			GetGValue(dwColor) / 255.0f,
@@ -85,7 +90,7 @@ public:
 	XMFLOAT4 GetColorF() const { return m_xmf4Color; }
 	XMFLOAT3 GetDirection() const
 	{
-		// È¸Àü ÄõÅÍ´Ï¾ğ¿¡¼­ Look º¤ÅÍ¸¦ ±¸ÇÏ´Â ¹æ¹ı
+		// È¸ï¿½ï¿½ ï¿½ï¿½ï¿½Í´Ï¾ğ¿¡¼ï¿½ Look ï¿½ï¿½ï¿½Í¸ï¿½ ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½
 		XMVECTOR qRotation = XMLoadFloat4(&m_xmf4Rotation);
 		XMFLOAT3 zAxis = Vector3::ZAxis();
 		XMVECTOR vLook = XMVector3Rotate(XMLoadFloat3(&zAxis), qRotation); 
@@ -103,18 +108,22 @@ public:
 	virtual void Update();
 
 
-	//[º¯°æ] Render ½Ã±×´ÏÃ³: HDC -> ID3D12GraphicsCommandList*
+	//[ï¿½ï¿½ï¿½ï¿½] Render ï¿½Ã±×´ï¿½Ã³: HDC -> ID3D12GraphicsCommandList*
 	virtual void Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera);
 
-	// [Ãß°¡] ¼ÎÀÌ´õ »ó¼ö º¯¼ö °»½Å (¿ùµå Çà·ÄÀ» b0 ½½·Ô¿¡ ¾÷·Îµå)
+	// [ì¶”ê°€] OOBB ì™€ì´ì–´í”„ë ˆì„ ë””ë²„ê·¸ ë Œë” (m_xmOOBB â†’ World í–‰ë ¬, ì™€ì´ì–´ PSO + ë‹¨ìœ„ íë¸Œ ë©”ì‰¬ ì¬ì‚¬ìš©)
+	void RenderDebugBox(ID3D12GraphicsCommandList* pd3dCommandList,
+		CMesh* pWireMesh, const XMFLOAT4& xmf4Color);
+
+	// [ï¿½ß°ï¿½] ï¿½ï¿½ï¿½Ì´ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ b0 ï¿½ï¿½ï¿½Ô¿ï¿½ ï¿½ï¿½ï¿½Îµï¿½)
 	virtual void CreateShaderVariables(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList* pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 
 	virtual void AddToInstanceBuffer(CInstancebuffer& buffer) {}
 
-	virtual void StartCollision(CGameObject* pOther) { /* Ãæµ¹ ½ÃÀÛ ½Ã ±âº» µ¿ÀÛÀº ¾Æ¹«°Íµµ ÇÏÁö ¾ÊÀ½ */ }
-	virtual void OnCollision(CGameObject* pOther) { /* Ãæµ¹ ½Ã ±âº» µ¿ÀÛÀº ¾Æ¹«°Íµµ ÇÏÁö ¾ÊÀ½ */ }
-	virtual void EndCollision(CGameObject* pOther) { /* Ãæµ¹ Á¾·á ½Ã ±âº» µ¿ÀÛÀº ¾Æ¹«°Íµµ ÇÏÁö ¾ÊÀ½ */ }
+	virtual void StartCollision(CGameObject* pOther) { /* ï¿½æµ¹ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½âº» ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Æ¹ï¿½ï¿½Íµï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ */ }
+	virtual void OnCollision(CGameObject* pOther) { /* ï¿½æµ¹ ï¿½ï¿½ ï¿½âº» ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Æ¹ï¿½ï¿½Íµï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ */ }
+	virtual void EndCollision(CGameObject* pOther) { /* ï¿½æµ¹ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½âº» ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Æ¹ï¿½ï¿½Íµï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ */ }
 };
 

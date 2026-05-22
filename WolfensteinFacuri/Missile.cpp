@@ -29,7 +29,7 @@ void CMissile::StartCollision(CGameObject* pOther)
 	
 	// 적과 충돌 시 폭발 효과 생성
 	CParticle* pExplosion = new CParticle();
-	pExplosion->Explode(GetPosition(), 10, RGB(255, 255, 0)); // 폭발 효과 생성 (위치, 입자 수, 색상)
+	pExplosion->Explode(GetPosition(), 100, RGB(255, 255, 0)); // 폭발 효과 생성 (위치, 입자 수, 색상)
 	SCENE_MANAGER->GetCurrentScene()->AddObject(pExplosion); // 폭발 효과를 현재 씬에 추가
 		
 	

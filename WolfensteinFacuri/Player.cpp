@@ -11,7 +11,7 @@ CPlayer::CPlayer()
 
 CPlayer::~CPlayer()
 {
-	if (m_pCamera) delete m_pCamera;
+	//if (m_pCamera) delete m_pCamera;
 	
 }
 
