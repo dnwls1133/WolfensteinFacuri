@@ -21,7 +21,7 @@ void CAircraft::FireMissile()
 
 	pMissile->SetMesh(SCENE_MANAGER->GetCurrentScene()->GetMissileMesh()); // �̻����� �޽� ���� (��: ���� ť��)
 	pMissile->SetColor(RGB(255, 255, 0)); // �̻����� ���� ���� (��: �����)
-
+	pMissile->GenerateBoundingBox(); 
 	// �̻����� ���� ���忡 �߰�
 	SCENE_MANAGER->GetCurrentScene()->AddObject(pMissile);
 }

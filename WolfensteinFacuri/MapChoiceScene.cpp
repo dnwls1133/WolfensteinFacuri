@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ChoiceCube.h"
 #include "Text.h"
+#include "WFSMap1Scene.h"
 #include "GalagaScene.h"
 #include "MapChoiceScene.h"
 
@@ -61,7 +62,7 @@ void MapChoiceScene::ProcessInput(const InputState& InputState, float fElapsedTi
 			// 선택된 객체가 있으면 처리
 			if (pSelectedObject)
 			{
-				SCENE_MANAGER->RequestSceneChange(new GalagaScene(m_pColliderManager, m_pCamera));
+				SCENE_MANAGER->RequestSceneChange(new WFSMap1Scene(m_pColliderManager, m_pCamera));
 			}
 
 

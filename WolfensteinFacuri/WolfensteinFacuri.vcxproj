@@ -214,6 +214,9 @@
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VSDiffused</EntryPointName>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="mapdata\level1.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

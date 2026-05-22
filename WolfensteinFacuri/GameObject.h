@@ -40,6 +40,7 @@ private:
 	ObjectType m_ObjectType;  // ��ü�� Ÿ��
 	bool m_IsActive = true;
 	bool m_IsDestroyed = false;
+	bool m_InstancedOnly = false;
 
 protected:
 	XMFLOAT3	m_xmf3Position; // ��ü�� ��ġ
@@ -79,6 +80,9 @@ public:
 	void SetDestroyed(bool isDestroyed) { m_IsDestroyed = isDestroyed; }
 	bool IsActive() const { return m_IsActive; }
 	bool IsDestroyed() const { return m_IsDestroyed; }
+
+	void SetInstancedOnly(bool b) { m_InstancedOnly = b; }
+	bool IsInstancedOnly() const { return m_InstancedOnly; }
 
 	void SetPosition(float x, float y, float z);
 	void SetPosition(const XMFLOAT3& xmf3Position) { m_xmf3Position = xmf3Position; }
@@ -120,7 +124,7 @@ public:
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList* pd3dCommandList);
 	virtual void ReleaseShaderVariables();
 
-	virtual void AddToInstanceBuffer(CInstancebuffer& buffer) {}
+	virtual void AddToInstanceBuffer(CInstancebuffer& buffer) {};
 
 	virtual void StartCollision(CGameObject* pOther) { /* �浹 ���� �� �⺻ ������ �ƹ��͵� ���� ���� */ }
 	virtual void OnCollision(CGameObject* pOther) { /* �浹 �� �⺻ ������ �ƹ��͵� ���� ���� */ }

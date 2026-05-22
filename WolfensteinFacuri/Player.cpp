@@ -67,7 +67,7 @@ void CPlayer::Rotate(float fPitch, float fYaw, float fRoll)
 {
 	if(m_pCamera)
 	{
-		m_pCamera->Rotate(fPitch, fYaw, fRoll); // ī�޶� ȸ��
+		//m_pCamera->Rotate(fPitch, fYaw, fRoll); // 카메라 ȸ��
 	}
 
 	XMFLOAT3 axisX = Vector3::XAxis(); // (1,0,0)

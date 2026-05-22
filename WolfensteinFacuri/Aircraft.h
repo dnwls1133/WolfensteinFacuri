@@ -25,7 +25,7 @@ public:
 		}
 		if (pOther->GetObjectType() == OBJ_WALL || pOther->GetObjectType() == OBJ_MONSTER)
 		{
-			m_nHealth = 0; // 벽과 충돌 시 체력 감소
+			//m_nHealth = 0; // 벽과 충돌 시 체력 감소
 		}
 
 	}
