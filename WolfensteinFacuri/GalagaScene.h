@@ -1,5 +1,8 @@
 ﻿#pragma once
 #include "Scene.h"
+
+class CAircraft;
+
 class GalagaScene :
     public CScene
 {
@@ -9,6 +12,8 @@ private:
 	std::vector<CGameObject*> m_vpEnemyObjects;
 	XMFLOAT3 m_xmf3Wallposition;
 	XMFLOAT3 m_xmf3Enemyspawnposition;
+
+	CAircraft* m_pAIrcraft{ nullptr };
 public:
     GalagaScene(CColliderManager* pCollider, CCamera* pCamera);
 	~GalagaScene() override = default;

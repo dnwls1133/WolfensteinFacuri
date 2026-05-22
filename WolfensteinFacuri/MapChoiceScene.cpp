@@ -61,7 +61,7 @@ void MapChoiceScene::ProcessInput(const InputState& InputState, float fElapsedTi
 			// 선택된 객체가 있으면 처리
 			if (pSelectedObject)
 			{
-				//SCENE_MANAGER->RequestSceneChange(new GalagaScene(m_pColliderManager, m_pCamera));
+				SCENE_MANAGER->RequestSceneChange(new GalagaScene(m_pColliderManager, m_pCamera));
 			}
 
 

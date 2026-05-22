@@ -133,6 +133,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Aircraft.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="ChoiceCube.h" />
     <ClInclude Include="CGameFramework.h" />
@@ -166,6 +167,7 @@
     <ClInclude Include="WolfensteinFacuri.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Aircraft.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="ChoiceCube.cpp" />
     <ClCompile Include="CGameFramework.cpp" />

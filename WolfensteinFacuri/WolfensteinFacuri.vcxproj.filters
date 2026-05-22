@@ -37,6 +37,12 @@
     <Filter Include="소스 파일\Helper">
       <UniqueIdentifier>{27d94180-a0aa-46ba-b343-6c0833392d39}</UniqueIdentifier>
     </Filter>
+    <Filter Include="헤더 파일\Object\Player">
+      <UniqueIdentifier>{4c25e896-e415-46eb-a041-6c39e852d103}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\Object\Player">
+      <UniqueIdentifier>{c02657d9-6c55-41d6-852d-7fcc41a1a495}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -90,9 +96,6 @@
     <ClInclude Include="Enemy.h">
       <Filter>헤더 파일\Object</Filter>
     </ClInclude>
-    <ClInclude Include="Player.h">
-      <Filter>헤더 파일\Object</Filter>
-    </ClInclude>
     <ClInclude Include="Shader.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -132,6 +135,12 @@
     <ClInclude Include="WFSMap1Scene.h">
       <Filter>헤더 파일\Class</Filter>
     </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>헤더 파일\Object\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="Aircraft.h">
+      <Filter>헤더 파일\Object\Player</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WolfensteinFacuri.cpp">
@@ -165,9 +174,6 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Enemy.cpp">
-      <Filter>소스 파일\Object</Filter>
-    </ClCompile>
-    <ClCompile Include="Player.cpp">
       <Filter>소스 파일\Object</Filter>
     </ClCompile>
     <ClCompile Include="Wall.cpp">
@@ -211,6 +217,12 @@
     </ClCompile>
     <ClCompile Include="WFSMap1Scene.cpp">
       <Filter>소스 파일\Class</Filter>
+    </ClCompile>
+    <ClCompile Include="Player.cpp">
+      <Filter>소스 파일\Object\Player</Filter>
+    </ClCompile>
+    <ClCompile Include="Aircraft.cpp">
+      <Filter>소스 파일\Object\Player</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

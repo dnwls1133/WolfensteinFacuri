@@ -5,7 +5,7 @@ class WFSMap1Scene :
 {
 public:
     WFSMap1Scene(CColliderManager* pCollider, CCamera* pCamera);
-	virtual ~WFSMap1Scene();
+	virtual ~WFSMap1Scene() = default;
 
 	virtual void Animate(float fElapsedTime) override;
 	virtual void ProcessInput(const InputState& InputState, float fElapsedTime) override;
