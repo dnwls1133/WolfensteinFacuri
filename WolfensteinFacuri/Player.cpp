@@ -7,7 +7,7 @@
 
 CPlayer::CPlayer()
 {
-	
+	m_xmf4Rotation = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
 CPlayer::~CPlayer()

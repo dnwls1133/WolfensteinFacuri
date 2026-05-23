@@ -120,3 +120,29 @@ float4 PSDiffused(VS_OUTPUT input) : SV_TARGET
     return input.color;
 }
     
+
+struct VS_INPUT_2D
+{
+    float2 position : POSITION;
+    float4 color : COLOR;
+};
+
+struct VS_OUTPUT_2D
+{
+    float4 position : SV_POSITION;
+    float4 color : COLOR;
+};
+
+VS_OUTPUT_2D VSCrosshair(VS_INPUT_2D input)
+{
+    VS_OUTPUT_2D output;
+    output.position = float4(input.position, 0.0f, 1.0f);
+    
+    output.color = input.color;
+    return output;
+}
+
+float4 PSCrosshair(VS_OUTPUT_2D input) : SV_TARGET
+{
+    return input.color;
+}

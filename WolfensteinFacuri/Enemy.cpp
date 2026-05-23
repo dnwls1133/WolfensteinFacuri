@@ -24,6 +24,11 @@ void CEnemy::Update()
     }
     CGameObject::Update();
 
+    Axis.x = 0.0f;
+    Axis.z = 0.0f;
+
+	Axis = Vector3::Normalize(Axis); // 회전 축을 정규화하여 일관된 회전을 보장합니다.
+
 
     Rotate(&Axis, rotationSpeed); // 적이 회전하도록 설정 (예시)
 

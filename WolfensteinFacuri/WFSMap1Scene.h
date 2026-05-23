@@ -2,7 +2,7 @@
 #include "Scene.h"
 
 class CStairMesh;
-class CAircraft;
+class CJointPlayer;
 
 class WFSMap1Scene :
     public CScene
@@ -13,6 +13,8 @@ public:
 
 	virtual void Animate(float fElapsedTime) override;
 	virtual void ProcessInput(const InputState& InputState, float fElapsedTime) override;
+
+	bool IsWall(float wx, float wz) const; 
 
 protected:
 	virtual void BuildSceneObjects() override;
@@ -25,7 +27,7 @@ private:
 	std::vector<std::string> m_vGridData;
 	static constexpr float kTileSize = 10.0f;
 
-	CAircraft* m_pAIrcraft{ nullptr };
+	CJointPlayer* m_pJointPlayer{ nullptr };
 
 	CStairMesh* m_pStairMesh{ nullptr };
 
@@ -35,6 +37,7 @@ private:
 	void SpawnWall (float wx, float wz);
 	void SpawnFloor(float wx, float wz);
 	void SpawnStair(float wx, float wz);
+	void SpawnEnemy(float wx, float wz);
 	void PlacePlayer(float wx, float wz);
 
 };

@@ -28,6 +28,7 @@ protected:
 	CMissileMesh* m_pMissileMesh{ NULL };
 	CPlaneMesh* m_pFloorMesh{ NULL };
 	CWallMesh* m_pWallMesh{ NULL };
+	CCrosshairMesh* m_pCrosshairMesh{ NULL };
 	std::vector<C3DTextMesh*> m_vpTextMeshes; 
 
 
@@ -62,6 +63,10 @@ protected:
 	CInstancebuffer   m_wallInstanceBuffer;
 	CInstancebuffer   m_floorInstanceBuffer;
 
+	
+	CCrosshairShader* m_pCrosshairShader = NULL;
+
+
 	UINT m_nWallInstances = 0;
 	UINT m_nFloorInstances = 0;
 
@@ -69,6 +74,9 @@ protected:
 	// [추가] OOBB 와이어프레임 디버그 자원
 	CWireframeShader* m_pWireShader = NULL;
 	CCubeMesh*        m_pWireCubeMesh = NULL;   // 단위 큐브 (fWHD=2.0 → ±1)
+
+	// 카메라 3인칭 / 1인칭 토글 플래그
+	bool m_bThirdPersonView = true; 
 
 
 protected:

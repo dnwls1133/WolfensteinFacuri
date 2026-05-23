@@ -152,7 +152,9 @@ void CScene::BuildSharedResources()
 	m_pParticleMesh = new CCubeMesh(m_pd3dDevice, m_pd3dCommandList, 0.2f);
 	m_pParticleMesh->AddRef();
 
-	
+	m_pCrosshairMesh = new CCrosshairMesh(m_pd3dDevice, m_pd3dCommandList, 0.05f);
+	m_pCrosshairMesh->AddRef();
+
 	C3DTextMesh* pTextMesh = new C3DTextMesh(m_pd3dDevice, m_pd3dCommandList, "WOLFENSTEIN", 1.0f, RANDOM_COLOR);
 	pTextMesh->AddRef();
 	m_vpTextMeshes.push_back(pTextMesh);
@@ -183,6 +185,11 @@ void CScene::BuildSharedResources()
 
 	m_pWireCubeMesh = new CCubeMesh(m_pd3dDevice, m_pd3dCommandList, 2.0f); // 정점 ±1
 	m_pWireCubeMesh->AddRef();
+
+
+	m_pCrosshairShader = new CCrosshairShader();
+	m_pCrosshairShader->CreateShader(m_pd3dDevice, m_pd3dGrahpicsRootSignature);
+	m_pCrosshairShader->AddRef();
 }
 
 
@@ -298,28 +305,62 @@ void CScene::UpdateCamera(float fElapsedTime)
 {
 	if (!m_pPlayer || !m_pCamera) return;
 
-	XMFLOAT3 playerPos = m_pPlayer->GetPosition();
-	XMFLOAT3 playerLook = m_pPlayer->GetDirection();
-	playerLook = Vector3::Normalize(playerLook);
+	if (m_bThirdPersonView)
+	{
+		XMFLOAT3 playerPos = m_pPlayer->GetPosition();
+		XMFLOAT3 playerLook = m_pPlayer->GetDirection();
+		playerLook = Vector3::Normalize(playerLook);
 
-	XMFLOAT3 offset = Vector3::ScalarProduct(playerLook, -5.0f, true);
-	XMFLOAT3 targetCameraPos = Vector3::Add(playerPos, offset);
-	targetCameraPos.y += 2.0f;
+		XMFLOAT3 offset = Vector3::ScalarProduct(playerLook, -5.0f, true);
+		XMFLOAT3 targetCameraPos = Vector3::Add(playerPos, offset);
+		targetCameraPos.y += 5.0f;
 
-	XMFLOAT3 currentCameraPos = m_pCamera->GetPosition();
-	XMVECTOR vCurrent = XMLoadFloat3(&currentCameraPos);
-	XMVECTOR vTarget = XMLoadFloat3(&targetCameraPos);
+		XMFLOAT3 currentCameraPos = m_pCamera->GetPosition();
+		XMVECTOR vCurrent = XMLoadFloat3(&currentCameraPos);
+		XMVECTOR vTarget = XMLoadFloat3(&targetCameraPos);
 
-	const float fFollowSpeed = 5.0f;
-	float t = fFollowSpeed * TIMER->GetTimeElapsed();
-	if (t > 1.0f) t = 1.0f;
+		const float fFollowSpeed = 5.0f;
+		float t = fFollowSpeed * TIMER->GetTimeElapsed();
+		if (t > 1.0f) t = 0.1f;
 
-	XMVECTOR vLerp = XMVectorLerp(vCurrent, vTarget, t);
-	XMFLOAT3 lerpPos;
-	XMStoreFloat3(&lerpPos, vLerp);
+		XMVECTOR vLerp = XMVectorLerp(vCurrent, vTarget, t);
+		XMFLOAT3 lerpPos;
+		XMStoreFloat3(&lerpPos, vLerp);
 
-	m_pCamera->SetPosition(lerpPos);
-	m_pCamera->Update();
+		m_pCamera->SetPosition(lerpPos);
+		m_pCamera->setLook(playerLook);
+		m_pCamera->Update();
+	}
+	else
+	{
+		XMFLOAT3 playerPos = m_pPlayer->GetPosition();
+		XMFLOAT3 playerLook = m_pPlayer->GetDirection();
+		playerLook = Vector3::Normalize(playerLook);
+
+		XMFLOAT3 offset = Vector3::ScalarProduct(playerLook, -0.5f, true);
+		XMFLOAT3 targetCameraPos = Vector3::Add(playerPos, offset);
+		targetCameraPos.y += 4.0f;
+
+		XMFLOAT3 currentCameraPos = m_pCamera->GetPosition();
+		XMVECTOR vCurrent = XMLoadFloat3(&currentCameraPos);
+		XMVECTOR vTarget = XMLoadFloat3(&targetCameraPos);
+
+	/*	const float fFollowSpeed = 5.0f;
+		float t = fFollowSpeed * TIMER->GetTimeElapsed();
+		if (t > 1.0f) t = 0.1f;
+
+		XMVECTOR vLerp = XMVectorLerp(vCurrent, vTarget, t);
+		XMFLOAT3 lerpPos;
+		XMStoreFloat3(&lerpPos, vLerp);*/
+		
+
+
+		m_pCamera->SetPosition(targetCameraPos);
+		m_pCamera->setLook(playerLook);
+		m_pCamera->Update();
+	}
+
+	
 
 }
 
@@ -414,6 +455,13 @@ void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera
 	// 6) 디버그 OOBB 와이어프레임 (F1 토글)
 	if (CScene::s_bDebugWireframe)
 		RenderDebugBoxes(pd3dCommandList, pCamera);
+
+	if (!m_bThirdPersonView)
+	{
+		m_pCrosshairShader->Render(pd3dCommandList, nullptr);
+		// CCrosshairMesh는 상수버퍼 없이 바로 DrawIndexedInstanced
+		m_pCrosshairMesh->Render(pd3dCommandList);
+	}
 }
 
 // [추가] 모든 활성 오브젝트와 플레이어의 OOBB를 와이어 큐브로 렌더

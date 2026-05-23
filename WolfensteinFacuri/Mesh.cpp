@@ -43,6 +43,7 @@ void CMesh::CalculateBoundingBoxExtents(const CDiffusedVertex* pVertices, UINT n
 {
 	if (!pVertices || nVertices == 0) {
 		m_xmf3Extents = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		m_xmf3LocalCenter = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		return;
 	}
 
@@ -62,6 +63,12 @@ void CMesh::CalculateBoundingBoxExtents(const CDiffusedVertex* pVertices, UINT n
 		(maxX- minX) * 0.5f,
 		(maxY - minY) * 0.5f,
 		(maxZ - minZ) * 0.5f
+	);
+
+    m_xmf3LocalCenter = XMFLOAT3(
+        (maxX + minX) * 0.5f,
+        (maxY + minY) * 0.5f,
+        (maxZ + minZ) * 0.5f
 	);
 
 }
@@ -736,14 +743,16 @@ CJointPartMesh::CJointPartMesh(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
     m_d3dVertexBufferView.StrideInBytes = m_nStride;
     m_d3dVertexBufferView.SizeInBytes = m_nStride * m_nVertices;
 
-    m_nIndices = 36;
-    UINT pnIndices[36] = {
-        0, 1, 5,  0, 5, 4,
-        3, 2, 6,  3, 6, 7,
-        0, 3, 2,  0, 2, 1,
-        4, 5, 6,  4, 6, 7,
-        1, 2, 6,  1, 6, 5,
-        0, 4, 7,  0, 7, 3
+    m_nIndices = 42; // 36 + 윗면 역방향 6개 추가
+
+    UINT pnIndices[42] = {
+        0, 1, 5,  0, 5, 4,   // 앞면
+        3, 2, 6,  3, 6, 7,   // 뒷면
+        0, 3, 2,  0, 2, 1,   // 윗면 (위→아래 시점)
+        2, 3, 0,  1, 2, 0,   // 윗면 역방향 (아래→위 시점) ← 추가
+        4, 5, 6,  4, 6, 7,   // 아랫면
+        1, 2, 6,  1, 6, 5,   // 오른면
+        0, 4, 7,  0, 7, 3    // 왼면
     };
 
     m_pd3dIndexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pnIndices, sizeof(UINT) * m_nIndices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, &m_pd3dIndexUploadBuffer);
@@ -759,30 +768,47 @@ CJointPartMesh::~CJointPartMesh() {}
 CMutantMesh::CMutantMesh(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, float fScale)
     : CMesh(pd3dDevice, pd3dCommandList)
 {
-    float s = fScale;
-    m_nVertices = 14;
+    m_nVertices = 48; // 6개 파트 (머리, 몸통, 팔x2, 다리x2) * 8정점
     m_nStride = sizeof(CDiffusedVertex);
     m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
-    XMFLOAT4 skin(0.3f, 0.5f, 0.1f, 1.0f);
-    XMFLOAT4 horn(0.8f, 0.1f, 0.1f, 1.0f);
+    CDiffusedVertex pVertices[48];
 
-    CDiffusedVertex pVertices[14];
-    pVertices[0] = CDiffusedVertex(XMFLOAT3(-s, s, -s), skin);
-    pVertices[1] = CDiffusedVertex(XMFLOAT3(s, s, -s), skin);
-    pVertices[2] = CDiffusedVertex(XMFLOAT3(s, 0.0f, -s), skin);
-    pVertices[3] = CDiffusedVertex(XMFLOAT3(-s, 0.0f, -s), skin);
-    pVertices[4] = CDiffusedVertex(XMFLOAT3(-s, s, s), skin);
-    pVertices[5] = CDiffusedVertex(XMFLOAT3(s, s, s), skin);
-    pVertices[6] = CDiffusedVertex(XMFLOAT3(s, 0.0f, s), skin);
-    pVertices[7] = CDiffusedVertex(XMFLOAT3(-s, 0.0f, s), skin);
-    pVertices[8] = CDiffusedVertex(XMFLOAT3(-s * 2.0f, s * 1.5f, 0.0f), horn);
-    pVertices[9] = CDiffusedVertex(XMFLOAT3(s * 2.0f, s * 1.5f, 0.0f), horn);
-    pVertices[10] = CDiffusedVertex(XMFLOAT3(-s * 0.5f, -s, -s * 0.5f), skin);
-    pVertices[11] = CDiffusedVertex(XMFLOAT3(s * 0.5f, -s, -s * 0.5f), skin);
-    pVertices[12] = CDiffusedVertex(XMFLOAT3(s * 0.5f, -s, s * 0.5f), skin);
-    pVertices[13] = CDiffusedVertex(XMFLOAT3(-s * 0.5f, -s, s * 0.5f), skin);
+    // 색상 디테일 추가 (부위별로 다른 색상)
+    XMFLOAT4 skinColor(0.4f, 0.7f, 0.2f, 1.0f);  // 피부: 돌연변이 녹색
+    XMFLOAT4 shirtColor(0.4f, 0.3f, 0.2f, 1.0f); // 상의: 칙칙한 갈색 (죄수복 느낌)
+    XMFLOAT4 pantsColor(0.2f, 0.2f, 0.3f, 1.0f); // 하의: 어두운 군청색
 
+    // 💡 [핵심 최적화] 박스를 쉽게 찍어내기 위한 람다(Lambda) 도우미 함수
+    // min/max 좌표만 넣으면 알아서 8개의 정점을 배열에 꽂아줍니다!
+    auto AddBox = [&](int offset, float minX, float maxX, float minY, float maxY, float minZ, float maxZ, XMFLOAT4 color)
+        {
+            pVertices[offset + 0] = CDiffusedVertex(XMFLOAT3(minX, maxY, minZ), color); // 앞면 좌상단
+            pVertices[offset + 1] = CDiffusedVertex(XMFLOAT3(maxX, maxY, minZ), color); // 앞면 우상단
+            pVertices[offset + 2] = CDiffusedVertex(XMFLOAT3(maxX, minY, minZ), color); // 앞면 우하단
+            pVertices[offset + 3] = CDiffusedVertex(XMFLOAT3(minX, minY, minZ), color); // 앞면 좌하단
+            pVertices[offset + 4] = CDiffusedVertex(XMFLOAT3(minX, maxY, maxZ), color); // 뒷면 좌상단
+            pVertices[offset + 5] = CDiffusedVertex(XMFLOAT3(maxX, maxY, maxZ), color); // 뒷면 우상단
+            pVertices[offset + 6] = CDiffusedVertex(XMFLOAT3(maxX, minY, maxZ), color); // 뒷면 우하단
+            pVertices[offset + 7] = CDiffusedVertex(XMFLOAT3(minX, minY, maxZ), color); // 뒷면 좌하단
+        };
+
+    float s = fScale;
+
+    // 🧱 1. 왼다리 (Left Leg) : 바닥(0.0)부터 무릎 높이까지
+    AddBox(0, -0.7f * s, -0.1f * s, 0.0f * s, 1.5f * s, -0.4f * s, 0.4f * s, pantsColor);
+    // 🧱 2. 오른다리 (Right Leg)
+    AddBox(8, 0.1f * s, 0.7f * s, 0.0f * s, 1.5f * s, -0.4f * s, 0.4f * s, pantsColor);
+    // 🧱 3. 몸통 (Torso) : 다리 위(1.5)부터 어깨(3.5)까지 (듬직하게)
+    AddBox(16, -0.8f * s, 0.8f * s, 1.5f * s, 3.5f * s, -0.5f * s, 0.5f * s, shirtColor);
+    // 🧱 4. 머리 (Head) : 어깨 위(3.5)부터 정수리(4.5)까지
+    AddBox(24, -0.5f * s, 0.5f * s, 3.5f * s, 4.5f * s, -0.5f * s, 0.5f * s, skinColor);
+    // 🧱 5. 왼팔 (Left Arm) : 몸통 왼쪽 바깥으로 부착, 약간 길게 늘어뜨림
+    AddBox(32, -1.3f * s, -0.8f * s, 1.2f * s, 3.3f * s, -0.3f * s, 0.3f * s, skinColor);
+    // 🧱 6. 오른팔 (Right Arm)
+    AddBox(40, 0.8f * s, 1.3f * s, 1.2f * s, 3.3f * s, -0.3f * s, 0.3f * s, skinColor);
+
+    // OBB 바운딩 박스 자동 계산 (가장 끝 좌표들을 덮어줌)
     CalculateBoundingBoxExtents(pVertices, m_nVertices);
 
     m_pd3dVertexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pVertices, m_nStride * m_nVertices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dVertexUploadBuffer);
@@ -790,19 +816,34 @@ CMutantMesh::CMutantMesh(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd
     m_d3dVertexBufferView.StrideInBytes = m_nStride;
     m_d3dVertexBufferView.SizeInBytes = m_nStride * m_nVertices;
 
-    m_nIndices = 72;
-    UINT pnIndices[72] = {
-        0, 1, 2,  0, 2, 3,
-        5, 4, 7,  5, 7, 6,
-        4, 5, 1,  4, 1, 0,
-        3, 2, 6,  3, 6, 7,
-        0, 4, 8,  4, 7, 8,  7, 3, 8,  3, 0, 8,
-        1, 5, 9,  5, 6, 9,  6, 2, 9,  2, 1, 9,
-        3, 2, 11,  3, 11, 10,
-        2, 6, 12,  2, 12, 11,
-        6, 7, 13,  6, 13, 12,
-        7, 3, 10,  7, 10, 13
-    };
+    m_nIndices = 216; // 6개 파트 * 36인덱스
+    UINT pnIndices[216];
+
+    // 💡 [핵심 최적화] 6개의 박스 인덱스를 for문으로 한 방에 생성!
+    int idx = 0;
+    for (UINT i = 0; i < 6; ++i)
+    {
+        UINT v = i * 8; // 각 파트의 시작 정점 번호 (0, 8, 16, 24...)
+
+        // 앞면
+        pnIndices[idx++] = v + 0; pnIndices[idx++] = v + 1; pnIndices[idx++] = v + 2;
+        pnIndices[idx++] = v + 0; pnIndices[idx++] = v + 2; pnIndices[idx++] = v + 3;
+        // 뒷면
+        pnIndices[idx++] = v + 5; pnIndices[idx++] = v + 4; pnIndices[idx++] = v + 7;
+        pnIndices[idx++] = v + 5; pnIndices[idx++] = v + 7; pnIndices[idx++] = v + 6;
+        // 윗면
+        pnIndices[idx++] = v + 4; pnIndices[idx++] = v + 5; pnIndices[idx++] = v + 1;
+        pnIndices[idx++] = v + 4; pnIndices[idx++] = v + 1; pnIndices[idx++] = v + 0;
+        // 아랫면
+        pnIndices[idx++] = v + 3; pnIndices[idx++] = v + 2; pnIndices[idx++] = v + 6;
+        pnIndices[idx++] = v + 3; pnIndices[idx++] = v + 6; pnIndices[idx++] = v + 7;
+        // 왼쪽면
+        pnIndices[idx++] = v + 4; pnIndices[idx++] = v + 0; pnIndices[idx++] = v + 3;
+        pnIndices[idx++] = v + 4; pnIndices[idx++] = v + 3; pnIndices[idx++] = v + 7;
+        // 오른쪽면
+        pnIndices[idx++] = v + 1; pnIndices[idx++] = v + 5; pnIndices[idx++] = v + 6;
+        pnIndices[idx++] = v + 1; pnIndices[idx++] = v + 6; pnIndices[idx++] = v + 2;
+    }
 
     m_pd3dIndexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pnIndices, sizeof(UINT) * m_nIndices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, &m_pd3dIndexUploadBuffer);
     m_d3dIndexBufferView.BufferLocation = m_pd3dIndexBuffer->GetGPUVirtualAddress();
@@ -895,3 +936,52 @@ CGunMesh::CGunMesh(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dComm
     delete[] pnIndices;
 }
 CGunMesh::~CGunMesh() {}
+
+struct Vertex2D { XMFLOAT2 pos; XMFLOAT4 color; };
+
+CCrosshairMesh::CCrosshairMesh(ID3D12Device* pd3dDevice,
+    ID3D12GraphicsCommandList* pd3dCommandList,
+    float fHalfLen, float fThick, XMFLOAT4 col)
+    : CMesh(pd3dDevice, pd3dCommandList)
+{
+    m_nVertices = 8;
+    m_nStride = sizeof(Vertex2D);
+    m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
+    float hw = fThick;
+    float hl = fHalfLen;
+
+    Vertex2D v[8] = {
+        // 가로 막대 (horizontal)
+            {{ -hl, -hw }, col}, {{ hl, -hw }, col},
+            {{ hl,  hw }, col}, {{ -hl,  hw }, col},
+            // 세로 막대 (vertical)
+            {{ -hw, -hl }, col}, {{ hw, -hl }, col},
+            {{ hw,   hl }, col}, {{ -hw,  hl }, col},
+    };
+
+    m_nIndices = 12;
+    UINT idx[12] = {
+        0,1,2, 0,2,3,   // 가로
+        4,5,6, 4,6,7    // 세로
+    };
+
+    m_pd3dVertexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList,
+        v, m_nStride * m_nVertices,
+        D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
+        &m_pd3dVertexUploadBuffer);
+    // 버텍스 버퍼 뷰
+    m_d3dVertexBufferView.BufferLocation = m_pd3dVertexBuffer->GetGPUVirtualAddress();
+    m_d3dVertexBufferView.SizeInBytes = m_nStride * m_nVertices;
+    m_d3dVertexBufferView.StrideInBytes = m_nStride;
+
+    m_pd3dIndexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList,
+        idx, sizeof(UINT) * m_nIndices,
+        D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER,
+        &m_pd3dIndexUploadBuffer);
+
+    // 인덱스 버퍼 뷰
+    m_d3dIndexBufferView.BufferLocation = m_pd3dIndexBuffer->GetGPUVirtualAddress();
+    m_d3dIndexBufferView.SizeInBytes = sizeof(UINT) * m_nIndices;
+    m_d3dIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+}
