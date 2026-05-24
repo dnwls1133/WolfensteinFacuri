@@ -1,5 +1,5 @@
 ﻿#include "stdafx.h"
-#include "GraphicsPipeline.h"
+#include "GraphicsHelpers.h"
 #include "Enemy.h"
 #include "Wall.h"
 #include "Scene.h"
@@ -50,6 +50,12 @@ CScene::~CScene()
 
 	if (m_pWireShader) m_pWireShader->Release();
 	if (m_pWireCubeMesh) m_pWireCubeMesh->Release();
+
+	if (m_pd3dcbLight) {
+		m_pd3dcbLight->Unmap(0, nullptr);
+		m_pd3dcbLight->Release();
+		m_pd3dcbLight = nullptr;
+	}
 }
 
 void CScene::ProcessInput(const InputState& InputState, float fElapsedTime)
@@ -65,7 +71,7 @@ void CScene::ProcessInput(const InputState& InputState, float fElapsedTime)
 
 void CScene::CreateGraphicsRootSignature(ID3D12Device* pd3dDevice)
 {
-	D3D12_ROOT_PARAMETER pd3dRootParameters[2];
+	D3D12_ROOT_PARAMETER pd3dRootParameters[3];
 	::ZeroMemory(pd3dRootParameters, sizeof(pd3dRootParameters));
 
 	// b0 : CB_GAMEOBJECT_INFO (게임 객체별 상수 버퍼)
@@ -79,6 +85,14 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device* pd3dDevice)
 	pd3dRootParameters[1].Descriptor.ShaderRegister = 1; // b1
 	pd3dRootParameters[1].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+
+
+	// b2 : CB_LIGHT_INFO (조명 상수 버퍼) 
+	pd3dRootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	pd3dRootParameters[2].Descriptor.ShaderRegister = 2; // b2
+	pd3dRootParameters[2].Descriptor.RegisterSpace = 0;
+	pd3dRootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
 
 	// IA 활성화 플래그
 	D3D12_ROOT_SIGNATURE_FLAGS d3dRootSignatureFlags = 
@@ -190,6 +204,17 @@ void CScene::BuildSharedResources()
 	m_pCrosshairShader = new CCrosshairShader();
 	m_pCrosshairShader->CreateShader(m_pd3dDevice, m_pd3dGrahpicsRootSignature);
 	m_pCrosshairShader->AddRef();
+
+	UINT cbSize = ((sizeof(CB_LIGHT_INFO) + 255) & ~255);
+	m_pd3dcbLight = ::CreateBufferResource(m_pd3dDevice, m_pd3dCommandList, nullptr,
+		cbSize, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr);
+	m_pd3dcbLight->Map(0, nullptr, (void**)&m_pcbMappedLight);
+
+	// 초기값 설정
+	m_pcbMappedLight->m_xmf3Direction = XMFLOAT3(0.5f, -1.0f, 0.5f);
+	m_pcbMappedLight->m_fAmbient = 0.5f;
+	m_pcbMappedLight->m_xmf3Color = XMFLOAT3(1.0f, 0.95f, 0.85f);
+	m_pcbMappedLight->m_fPad = 0.0f;
 }
 
 
@@ -371,6 +396,11 @@ void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera
 	
 	// 1. Root Signature 바인딩
 	pd3dCommandList->SetGraphicsRootSignature(m_pd3dGrahpicsRootSignature);
+
+	if(m_pd3dcbLight)
+		pd3dCommandList->SetGraphicsRootConstantBufferView(2,
+			m_pd3dcbLight->GetGPUVirtualAddress());
+
 
 	// 2. 뷰포트/가위 + 카메라 상수 버퍼(b1) 갱신/바인딩
 	pCamera->SetViewportsAndScissorRects(pd3dCommandList);

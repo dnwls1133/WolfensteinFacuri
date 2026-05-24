@@ -16,6 +16,10 @@ public:
 
 	bool IsWall(float wx, float wz) const; 
 
+	float GetFloorY(float wx, float wz) const;
+
+	int m_nEnemyCount = 0; // 현재 맵에 존재하는 적의 수
+
 protected:
 	virtual void BuildSceneObjects() override;
 	virtual void UpdateCamera(float fElapsedTime) override;
@@ -27,6 +31,9 @@ private:
 	std::vector<std::string> m_vGridData;
 	static constexpr float kTileSize = 10.0f;
 
+	static constexpr float kStepHeight = 0.5f;
+	static constexpr float kMaxStepUp = 2.5f;
+
 	CJointPlayer* m_pJointPlayer{ nullptr };
 
 	CStairMesh* m_pStairMesh{ nullptr };
@@ -35,7 +42,7 @@ private:
 	void SpawnFromGrid();
 
 	void SpawnWall (float wx, float wz);
-	void SpawnFloor(float wx, float wz);
+	void SpawnFloor(float wx, float wz, float fHeight = 0.0f);
 	void SpawnStair(float wx, float wz);
 	void SpawnEnemy(float wx, float wz);
 	void PlacePlayer(float wx, float wz);

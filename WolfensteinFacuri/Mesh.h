@@ -25,19 +25,22 @@ class CDiffusedVertex : public CVertex
 {
 protected:
 	XMFLOAT4 m_xmf4Diffuse; // RGBA 색상
+	XMFLOAT3 m_xmf3Normal;
 
 public:
 	CDiffusedVertex()
-		: m_xmf4Diffuse(0.0f, 0.0f, 0.0f, 0.0f) {
+		: m_xmf4Diffuse(0.0f, 0.0f, 0.0f, 0.0f), m_xmf3Normal(0,1,0) {
 		m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	}
-	CDiffusedVertex(float x, float y, float z, XMFLOAT4 xmf4Diffuse)
-		: m_xmf4Diffuse(xmf4Diffuse) {
+	CDiffusedVertex(float x, float y, float z, XMFLOAT4 color,
+		XMFLOAT3 normal = XMFLOAT3(0, 1, 0))
+		: m_xmf4Diffuse(color), m_xmf3Normal(normal) {
 		m_xmf3Position = XMFLOAT3(x, y, z);
 	}
-	CDiffusedVertex(XMFLOAT3 xmf3Position, XMFLOAT4 xmf4Diffuse)
-		: m_xmf4Diffuse(xmf4Diffuse) {
-		m_xmf3Position = xmf3Position;
+	CDiffusedVertex(XMFLOAT3 pos, XMFLOAT4 color,
+		XMFLOAT3 normal = XMFLOAT3(0, 1, 0))
+		: m_xmf4Diffuse(color), m_xmf3Normal(normal) {
+		m_xmf3Position = pos;
 	}
 	~CDiffusedVertex() {}
 };

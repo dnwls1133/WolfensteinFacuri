@@ -30,6 +30,10 @@ public:
 
 	XMFLOAT3 GetMuzzlePosition() const { return m_xmf3MuzzlePos; }
 	XMFLOAT3 GetMuzzleDirection() const { return m_xmf3MuzzleDir; }
+
+	void SetVelocity(float velocity) { m_fVelocity = velocity; }
+    void SetFloorY(float y) { m_fFloorY = y; }
+
 private:
 	void BuildOnePart(CGameObject*& rpPart, CJointPartMesh*& rpMesh,
 		ID3D12Device* pd3dDevice,
@@ -64,6 +68,8 @@ private:
     bool  m_bOnGround = false;
     static constexpr float kGravity = -90.81f;
     static constexpr float kJumpSpeed = 10.0f;
+
+	float m_fFloorY = 0.0f; // 바닥의 Y 좌표
 
     // ── 걷기 애니메이션 ──────────────────────────────
     float m_fWalkTime = 0.0f;

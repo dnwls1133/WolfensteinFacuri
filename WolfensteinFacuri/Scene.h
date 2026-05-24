@@ -11,6 +11,16 @@ typedef unsigned long long ULONGLONG;
 
 class CColliderManager;
 
+// 라이트 데이터 구조체 (b2 슬롯용)
+struct CB_LIGHT_INFO {
+	XMFLOAT3 m_xmf3Direction; // 빛이 향하는 방향
+	float    m_fAmbient;
+	XMFLOAT3 m_xmf3Color;
+	float    m_fPad;
+};
+
+
+
 class CScene
 {
 public:
@@ -77,6 +87,11 @@ protected:
 
 	// 카메라 3인칭 / 1인칭 토글 플래그
 	bool m_bThirdPersonView = true; 
+
+	ID3D12Resource* m_pd3dcbLight = nullptr;
+	CB_LIGHT_INFO* m_pcbMappedLight = nullptr;
+	
+	float m_fLightTime = 0.0f;
 
 
 protected:

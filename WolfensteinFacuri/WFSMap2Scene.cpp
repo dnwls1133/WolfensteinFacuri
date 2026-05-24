@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Wall.h"
-#include "Aircraft.h"
+#include "Enemy.h"
+#include "JointPlayer.h"
 #include "WFSMap2Scene.h"
 
 
@@ -17,49 +18,182 @@ WFSMap2Scene::~WFSMap2Scene()
 
 void WFSMap2Scene::Animate(float fElapsedTime)
 {
+	if (m_nEnemyCount <= 0)
+	{
+		// 모든 적이 제거되었을 때 승리 처리
+		if (m_pPlayer) m_pPlayer->SetWon();
+	}
+
+	if (m_pJointPlayer) {
+		XMFLOAT3 pos = m_pJointPlayer->GetPosition();
+		m_pJointPlayer->SetFloorY(GetFloorY(pos.x, pos.z));
+	}
+
+	m_fLightTime += fElapsedTime;
+
+	float a = m_fLightTime * 0.1f;
+
+	m_pcbMappedLight->m_xmf3Direction = XMFLOAT3(sinf(a), -cosf(a), 0.5f);
+
+	float t = ((cosf(a) + 1.0f) * 0.5f);
+
+	m_pcbMappedLight->m_xmf3Color = XMFLOAT3(
+		1.0f,
+		0.6f + 0.4f * t,
+		0.3f + 0.7f * t
+	);
+
+
 	CScene::Animate(fElapsedTime);
+
 }
 
 void WFSMap2Scene::ProcessInput(const InputState& InputState, float fElapsedTime)
 {
+	if (!m_pJointPlayer) return;
 	const UCHAR* pKeyBuffer = InputState.keys;
 
 	if (pKeyBuffer[VK_LEFT] & 0x80)
 	{
-		m_pAIrcraft->Rotate(0, 0, 0.01f); // 롤 회전 (좌회전)
-		m_pAIrcraft->Rotate(0, -0.01f, 0); // 카메라 요 회전 (좌회전)
-		m_pCamera->Rotate(0, -1.f, 0); // 카메라 요 회전 (좌회전)
-		//m_pAIrcraft->Move(DIR_LEFT, 20); // 좌회전
+		m_pJointPlayer->Rotate(0, -0.05f, 0);
+		//m_pCamera->Rotate(0, -1.f, 0);
+		m_pJointPlayer->m_bIsMoving = true; // 걷기 애니메이션 활성화
 
 	}
 	if (pKeyBuffer[VK_RIGHT] & 0x80)
 	{
-		m_pAIrcraft->Rotate(0, 0, -0.01f); // 롤 회전 (우회전)
-		m_pAIrcraft->Rotate(0, 0.01f, 0); // 카메라 요 회전 (우회전)
-		m_pCamera->Rotate(0, 1.f, 0); // 카메라 요 회전 (우회전)
-		//m_pAIrcraft->Move(DIR_RIGHT, 20); // 우회전
+		m_pJointPlayer->Rotate(0, 0.05f, 0);
+		//m_pCamera->Rotate(0, 1.f, 0);
+		m_pJointPlayer->m_bIsMoving = true; // 걷기 애니메이션 활성화
+	}
+
+	// 이동 + 벽 충돌 슬라이딩
+	const float kSpeed = 25.0f;
+	const float kRadius = 2.0f;
+
+	bool bMoving = false;
+
+	if (pKeyBuffer[VK_UP] & 0x80 || pKeyBuffer[VK_DOWN] & 0x80)
+	{
+		// 카메라 룩 벡터를 수평 방향으로만 사용
+		XMFLOAT3 look = m_pCamera->GetLookVector();
+		look.y = 0;
+		float len = sqrtf(look.x * look.x + look.z * look.z);
+		if (len > 0.001f) { look.x /= len; look.z /= len; }
+
+		float dir = (pKeyBuffer[VK_UP] & 0x80) ? 1.0f : -1.0f;
+		float dx = look.x * kSpeed * dir * fElapsedTime;
+		float dz = look.z * kSpeed * dir * fElapsedTime;
+
+		XMFLOAT3 pos = m_pJointPlayer->GetPosition();
+		float currFloor = GetFloorY(pos.x, pos.z);
+
+		float newX = pos.x + dx;
+		float edgeX = pos.x + dx + (dx >= 0 ? kRadius : -kRadius);
+		bool wallX = IsWall(edgeX, pos.z - kRadius) ||
+			IsWall(edgeX, pos.z) ||
+			IsWall(edgeX, pos.z + kRadius);
+
+
+		if (!wallX) {
+			float nextFloor = GetFloorY(newX, pos.z);
+			if (nextFloor - currFloor <= kMaxStepUp) {
+				pos.x = newX;
+				if (nextFloor > currFloor) {
+					pos.y = nextFloor;
+					m_pJointPlayer->SetVelocity(0.0f);
+				}
+			}
+		}
+
+		float newZ = pos.z + dz;
+		float edgeZ = pos.z + dz + (dz >= 0 ? kRadius : -kRadius);
+		bool wallZ = IsWall(pos.x - kRadius, edgeZ) ||
+			IsWall(pos.x, edgeZ) ||
+			IsWall(pos.x + kRadius, edgeZ);
+		if (!wallZ) {
+			float nextFloor = GetFloorY(pos.x, newZ);
+			if (nextFloor - currFloor <= kMaxStepUp) {
+				pos.z = newZ;
+				if (nextFloor > currFloor) {
+					pos.y = nextFloor;
+					m_pJointPlayer->SetVelocity(0.0f);
+				}
+			}
+		}
+
+
+		m_pJointPlayer->SetPosition(pos.x, pos.y, pos.z);
+		bMoving = true;
 
 	}
-	if (pKeyBuffer[VK_UP] & 0x80)
+
+	if (pKeyBuffer[VK_SPACE] & 0x80)
 	{
-		m_pAIrcraft->Move(DIR_FORWARD, 50); // 이동 속도
+		m_pJointPlayer->Jump();
 	}
-	if (pKeyBuffer[VK_DOWN] & 0x80)
-	{
-		m_pAIrcraft->Move(DIR_BACKWARD, 50); // 이동 속도
-	}
+
 	if (pKeyBuffer[VK_CONTROL] & 0x80)
 	{
-
-		m_pAIrcraft->m_fLastFireTime += TIMER->GetTimeElapsed(); // 매 프레임마다 경과 시간을 누적
-		if (m_pAIrcraft->m_fLastFireTime >= m_pAIrcraft->m_fFireCooldown) // 쿨다운 시간이 지났는지 체크
+		m_pJointPlayer->m_fLastFireTime += TIMER->GetTimeElapsed(); // 매 프레임마다 경과 시간을 누적
+		if (m_pJointPlayer->m_fLastFireTime >= m_pJointPlayer->m_fFireCooldown) // 쿨다운 시간이 지났는지 체크
 		{
-			m_pAIrcraft->m_fLastFireTime = 0.0f; // 발사 후 마지막 발사 시간 초기화
-			m_pAIrcraft->FireMissile(); // 미사일 발사
-
+			m_pJointPlayer->m_fLastFireTime = 0.0f; // 발사 후 마지막 발사 시간 초기화
+			m_pJointPlayer->FireMissile(); // 미사일 발사
 		}
+
 	}
 
+	if (pKeyBuffer[VK_F2] & 0x80)
+	{
+		m_bThirdPersonView = true;
+	}
+	if (pKeyBuffer[VK_F3] & 0x80)
+	{
+		m_bThirdPersonView = false;
+	}
+
+	m_pJointPlayer->m_bIsMoving = bMoving; // 걷기 애니메이션 활성화 여부 설정
+	//if (!(pKeyBuffer[VK_LEFT] & 0x80) && !(pKeyBuffer[VK_RIGHT] & 0x80) &&
+	//	!(pKeyBuffer[VK_UP] & 0x80) && !(pKeyBuffer[VK_DOWN] & 0x80))
+	//{
+	//	m_pJointPlayer->m_bIsMoving = false; // 걷기 애니메이션 비활성화
+	//}
+
+}
+
+bool WFSMap2Scene::IsWall(float wx, float wz) const
+{
+
+	float offsetX = -m_nMapWidth * kTileSize * 0.5f;
+	float offsetZ = -m_nMapHeight * kTileSize * 0.5f;
+
+	// int()cast는 버림을 하므로 올림 내림 처리를 위해 floorf() + 0.5f를 사용하여 가장 가까운 정수로 반올림한다.
+	int col = (int)floorf((wx - offsetX) / kTileSize + 0.5f);
+	int row = (int)floorf((wz - offsetZ) / kTileSize + 0.5f);
+
+	if (col < 0 || col >= m_nMapWidth || row < 0 || row >= m_nMapHeight)
+		return true;
+
+	return m_vGridData[row][col] == '#';
+}
+
+float WFSMap2Scene::GetFloorY(float wx, float wz) const
+{
+	float offsetX = -m_nMapWidth * kTileSize * 0.5f;
+	float offsetZ = -m_nMapHeight * kTileSize * 0.5f;
+
+	int col = (int)floorf((wx - offsetX) / kTileSize + 0.5f);
+	int row = (int)floorf((wz - offsetZ) / kTileSize + 0.5f);
+
+	if (col < 0 || col >= m_nMapWidth || row < 0 || row >= m_nMapHeight)
+		return 0.0f;
+
+	char c = m_vGridData[row][col];
+	if (c >= '1' && c <= '9')
+		return (c - '0') * kStepHeight;
+
+	return 0.0f;
 }
 
 void WFSMap2Scene::UpdateCamera(float fElapsedTime)
@@ -75,29 +209,22 @@ void WFSMap2Scene::BuildSceneObjects()
 
 	m_pStairMesh->AddRef(); // 참조 카운트 증가
 
-	m_pAIrcraft = new CAircraft();
+	m_pJointPlayer = new CJointPlayer();
+	m_pJointPlayer->SetCamera(m_pCamera);
+	m_pJointPlayer->BuildParts(m_pd3dDevice, m_pd3dCommandList, m_pShader);
 
-	m_pAIrcraft->SetCamera(m_pCamera);
-	m_pAIrcraft->SetMesh(m_pPlayerMesh);
-	m_pAIrcraft->SetShader(m_pShader);
-	m_pAIrcraft->CreateShaderVariables(m_pd3dDevice, m_pd3dCommandList);
-
-	m_pAIrcraft->SetPosition(0.0f, 0.0f, -100.0f);
-
-	m_pAIrcraft->SetObjectType(OBJ_PLAYER);
-	// 플레이어 색상 설정
-	m_pAIrcraft->SetColor(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-
-	m_pAIrcraft->GenerateBoundingBox();
-
-	m_pAIrcraft->SetActive(true);
-	m_pPlayer = m_pAIrcraft; // m_pPlayer 포인터를 m_pAIrcraft로 설정
+	m_pJointPlayer->SetMesh(m_pPlayerMesh);
+	m_pJointPlayer->SetPosition(0.0f, 0.0f, -100.0f);
+	m_pJointPlayer->SetObjectType(OBJ_PLAYER);
+	m_pJointPlayer->GenerateBoundingBox();
+	m_pJointPlayer->SetActive(true);
+	m_pPlayer = m_pJointPlayer; // m_pPlayer 포인터를 m_pAIrcraft로 설정
 
 
 
 	if (!LoadMapFile(L"\\mapdata\\level2.txt"))
 	{
-		::OutputDebugStringA("[WFSMap2] level2.txt 로드 실패 - 빈 맵\n");
+		::OutputDebugStringA("[WFSMap1] level1.txt 로드 실패 - 빈 맵\n");
 		return;
 	}
 	const UINT nMapCapacity = m_nMapWidth * m_nMapHeight;
@@ -164,8 +291,13 @@ void WFSMap2Scene::SpawnFromGrid()
 			case '.': SpawnFloor(wx, wz); break;
 			case 'P': SpawnFloor(wx, wz); PlacePlayer(wx, wz); break;
 			case 'S': SpawnFloor(wx, wz); SpawnStair(wx, wz); break;
-			case 'E': SpawnFloor(wx, wz); break; // 적 스폰은 나중에 구현
-			default: break;  // 공백 등은 빈 공간
+			case 'E': SpawnFloor(wx, wz); SpawnEnemy(wx, wz); break; // 적 스폰은 나중에 구현
+			default:
+				if (c >= '1' && c <= '9') {
+					float h = (c - '0') * kStepHeight;
+					SpawnFloor(wx, wz, h);
+				}
+				break;
 			}
 		}
 	}
@@ -176,24 +308,24 @@ void WFSMap2Scene::SpawnWall(float wx, float wz)
 {
 	XMFLOAT4X4 world;
 	XMStoreFloat4x4(&world, XMMatrixTranslation(wx, 0.0f, wz));
-	m_wallInstanceBuffer.AddInstance(world, XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f));
+	m_wallInstanceBuffer.AddInstance(world, XMFLOAT4(0.4f, 0.25f, 0.15f, 1.0f));
 
 	CWall* pWall = new CWall();
 	pWall->SetMesh(m_pWallMesh);
 	pWall->SetPosition(wx, 0.0f, wz);
 	pWall->SetObjectType(OBJ_WALL);
 	pWall->SetInstancedOnly(true); // 인스턴싱 전용으로 설정
-	pWall->SetColor(XMFLOAT4(0.7f, 0.0f, 0.7f, 1.0f));
+	//pWall->SetColor(XMFLOAT4(1.f, 0.0f, 0.7f, 1.0f));
 	pWall->GenerateBoundingBox();
 	AddObject(pWall);
 
 }
 
-void WFSMap2Scene::SpawnFloor(float wx, float wz)
+void WFSMap2Scene::SpawnFloor(float wx, float wz, float fHeight)
 {
 	XMFLOAT4X4 world;
-	XMStoreFloat4x4(&world, XMMatrixTranslation(wx, -0.5f, wz));
-	m_floorInstanceBuffer.AddInstance(world, XMFLOAT4(0.5f, 0.0f, 0.2f, 1.0f));
+	XMStoreFloat4x4(&world, XMMatrixTranslation(wx, fHeight - 0.5f, wz));
+	m_floorInstanceBuffer.AddInstance(world, XMFLOAT4(0.3f, 0.2f, 0.1f, 1.0f));
 }
 
 void WFSMap2Scene::SpawnStair(float wx, float wz)
@@ -209,8 +341,28 @@ void WFSMap2Scene::SpawnStair(float wx, float wz)
 	AddObject(pStair);
 }
 
+void WFSMap2Scene::SpawnEnemy(float wx, float wz)
+{
+	CEnemy* pEnemy = new CEnemy();
+	pEnemy->SetMesh(m_pEnemyMesh);
+	pEnemy->SetShader(m_pShader);
+	pEnemy->CreateShaderVariables(m_pd3dDevice, m_pd3dCommandList);
+	pEnemy->SetPosition(wx, 0.0f, wz);
+	pEnemy->SetObjectType(OBJ_ENEMY);
+	pEnemy->SetColor(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+	pEnemy->GenerateBoundingBox();
+	pEnemy->SetSpeed(1.0f); // 적의 이동 속도 설정
+
+	float offsetX = -m_nMapWidth * kTileSize * 0.5f;
+	float offsetZ = -m_nMapHeight * kTileSize * 0.5f;
+	pEnemy->SetGridMap(&m_vGridData, m_nMapWidth, m_nMapHeight, kTileSize, offsetX, offsetZ);
+	AddObject(pEnemy);
+
+	++m_nEnemyCount;
+}
+
 void WFSMap2Scene::PlacePlayer(float wx, float wz)
 {
-	if (!m_pAIrcraft) return;
-	m_pAIrcraft->SetPosition(wx, 0.0f, wz);
+	if (!m_pJointPlayer) return;
+	m_pJointPlayer->SetPosition(wx, 0.0f, wz);
 }
