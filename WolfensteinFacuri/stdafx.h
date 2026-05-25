@@ -32,6 +32,9 @@
 #include <set>
 #include <time.h>
 #include <random>
+#include <queue>
+#include <tuple>
+
 
 // D3D12 추가 헤더 파일입니다.
 #include <wrl.h>			//ComPtr

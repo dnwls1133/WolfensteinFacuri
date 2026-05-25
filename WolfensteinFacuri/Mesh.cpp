@@ -43,6 +43,7 @@ void CMesh::CalculateBoundingBoxExtents(const CDiffusedVertex* pVertices, UINT n
 {
 	if (!pVertices || nVertices == 0) {
 		m_xmf3Extents = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		m_xmf3LocalCenter = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		return;
 	}
 
@@ -62,6 +63,12 @@ void CMesh::CalculateBoundingBoxExtents(const CDiffusedVertex* pVertices, UINT n
 		(maxX- minX) * 0.5f,
 		(maxY - minY) * 0.5f,
 		(maxZ - minZ) * 0.5f
+	);
+
+    m_xmf3LocalCenter = XMFLOAT3(
+        (maxX + minX) * 0.5f,
+        (maxY + minY) * 0.5f,
+        (maxZ + minZ) * 0.5f
 	);
 
 }
@@ -164,47 +171,84 @@ CCubeMesh::~CCubeMesh()
 {
 }
 CPlaneMesh::CPlaneMesh(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList,
-                      float fWidth, float fDepth)
+    float fWidth, float fDepth)
     : CMesh(pd3dDevice, pd3dCommandList)
 {
     float fx = fWidth * 0.5f;
     float fz = fDepth * 0.5f;
- 
-    m_nVertices = 4;
+
+    // 💡 얇은 블록의 두께(단차 높이)를 0.5로 설정합니다.
+    float fh = 2.f;
+
+    XMFLOAT4 col(100.f / 255.f, 100.f / 255.f, 20.f / 255.f, 1.0f);
+
+    m_nVertices = 24; // 평면(4) -> 육면체(8)로 변경
     m_nStride = sizeof(CDiffusedVertex);
     m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
- 
-    // 바닥 타일은 동일한 회갈색 — 기존 SetColor(RGB(100,100,20))에 대응
+
+    // 바닥 타일은 동일한 회갈색
     XMFLOAT4 xmf4FloorColor(100.0f / 255.0f, 100.0f / 255.0f, 20.0f / 255.0f, 1.0f);
- 
-    CDiffusedVertex pVertices[4];
-    pVertices[0] = CDiffusedVertex(XMFLOAT3(-fx, 0.0f, -fz), xmf4FloorColor);
-    pVertices[1] = CDiffusedVertex(XMFLOAT3(+fx, 0.0f, -fz), xmf4FloorColor);
-    pVertices[2] = CDiffusedVertex(XMFLOAT3(+fx, 0.0f, +fz), xmf4FloorColor);
-    pVertices[3] = CDiffusedVertex(XMFLOAT3(-fx, 0.0f, +fz), xmf4FloorColor);
- 
-    CalculateBoundingBoxExtents(pVertices, m_nVertices);
- 
+
+    CDiffusedVertex pVertices[24] = {
+        // +Y 윗면  (y=0)
+        {XMFLOAT3(-fx, 0,-fz), col, XMFLOAT3(0,1,0)},
+        {XMFLOAT3(+fx, 0,-fz), col, XMFLOAT3(0,1,0)},
+        {XMFLOAT3(+fx, 0,+fz), col, XMFLOAT3(0,1,0)},
+        {XMFLOAT3(-fx, 0,+fz), col, XMFLOAT3(0,1,0)},
+        // -Y 아랫면 (y=-fh)
+        {XMFLOAT3(-fx,-fh,+fz), col, XMFLOAT3(0,-1,0)},
+        {XMFLOAT3(+fx,-fh,+fz), col, XMFLOAT3(0,-1,0)},
+        {XMFLOAT3(+fx,-fh,-fz), col, XMFLOAT3(0,-1,0)},
+        {XMFLOAT3(-fx,-fh,-fz), col, XMFLOAT3(0,-1,0)},
+        // -Z 앞면
+        {XMFLOAT3(+fx, 0,-fz), col, XMFLOAT3(0,0,-1)},
+        {XMFLOAT3(-fx, 0,-fz), col, XMFLOAT3(0,0,-1)},
+        {XMFLOAT3(-fx,-fh,-fz), col, XMFLOAT3(0,0,-1)},
+        {XMFLOAT3(+fx,-fh,-fz), col, XMFLOAT3(0,0,-1)},
+        // +Z 뒷면
+        {XMFLOAT3(-fx, 0,+fz), col, XMFLOAT3(0,0,1)},
+        {XMFLOAT3(+fx, 0,+fz), col, XMFLOAT3(0,0,1)},
+        {XMFLOAT3(+fx,-fh,+fz), col, XMFLOAT3(0,0,1)},
+        {XMFLOAT3(-fx,-fh,+fz), col, XMFLOAT3(0,0,1)},
+        // +X 오른면
+        {XMFLOAT3(+fx, 0,-fz), col, XMFLOAT3(1,0,0)},
+        {XMFLOAT3(+fx, 0,+fz), col, XMFLOAT3(1,0,0)},
+        {XMFLOAT3(+fx,-fh,+fz), col, XMFLOAT3(1,0,0)},
+        {XMFLOAT3(+fx,-fh,-fz), col, XMFLOAT3(1,0,0)},
+        // -X 왼면
+        {XMFLOAT3(-fx, 0,+fz), col, XMFLOAT3(-1,0,0)},
+        {XMFLOAT3(-fx, 0,-fz), col, XMFLOAT3(-1,0,0)},
+        {XMFLOAT3(-fx,-fh,-fz), col, XMFLOAT3(-1,0,0)},
+        {XMFLOAT3(-fx,-fh,+fz), col, XMFLOAT3(-1,0,0)},
+    };
+
+    CalculateBoundingBoxExtents(pVertices, m_nVertices); // OBB 박스 자동 계산
+
     m_pd3dVertexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList,
         pVertices, m_nStride * m_nVertices,
         D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
         &m_pd3dVertexUploadBuffer);
     m_d3dVertexBufferView.BufferLocation = m_pd3dVertexBuffer->GetGPUVirtualAddress();
-    m_d3dVertexBufferView.StrideInBytes  = m_nStride;
-    m_d3dVertexBufferView.SizeInBytes    = m_nStride * m_nVertices;
- 
-    m_nIndices = 6;
-    UINT pnIndices[6] = { 0, 2, 1,  0, 3, 2 }; // [기존 GDI와 동일]
- 
+    m_d3dVertexBufferView.StrideInBytes = m_nStride;
+    m_d3dVertexBufferView.SizeInBytes = m_nStride * m_nVertices;
+
+    m_nIndices = 36; // 면 6개 * 삼각형 2개 * 정점 3개
+    UINT indices[36];
+    for (int f = 0; f < 6; f++) {
+        int b = f * 4;
+        indices[f * 6 + 0] = b + 0; indices[f * 6 + 1] = b + 1; indices[f * 6 + 2] = b + 2;
+        indices[f * 6 + 3] = b + 0; indices[f * 6 + 4] = b + 2; indices[f * 6 + 5] = b + 3;
+    }
+
+
     m_pd3dIndexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList,
-        pnIndices, sizeof(UINT) * m_nIndices,
+        indices, sizeof(UINT) * m_nIndices,
         D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER,
         &m_pd3dIndexUploadBuffer);
     m_d3dIndexBufferView.BufferLocation = m_pd3dIndexBuffer->GetGPUVirtualAddress();
-    m_d3dIndexBufferView.Format         = DXGI_FORMAT_R32_UINT;
-    m_d3dIndexBufferView.SizeInBytes    = sizeof(UINT) * m_nIndices;
+    m_d3dIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+    m_d3dIndexBufferView.SizeInBytes = sizeof(UINT) * m_nIndices;
 }
- 
 CPlaneMesh::~CPlaneMesh() {}
  
  
@@ -383,64 +427,78 @@ CWallMesh::CWallMesh(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCo
                    float fWidth, float fHeight, float fDepth)
     : CMesh(pd3dDevice, pd3dCommandList)
 {
-    float w = fWidth * 0.5f;
-    float d = fDepth * 0.5f;
-    float h = fHeight;
-    float sh = h * 0.8f;     // 어깨 높이
-    float sw = w * 0.6f;
-    float sd = d * 0.6f;
- 
-    m_nVertices = 9;
+
+	float hw = fWidth * 0.50f; float hh = fHeight; float hd = fDepth * 0.5f;
+	XMFLOAT4 col(0.7f, 0.7f, 0.7f, 1.0f); // 회색
+
+    // 24정점 — 면마다 4개, 각 면의 모든 정점이 같은 노멀을 가짐
+    CDiffusedVertex v[24] = {
+        // +Y (윗면)  normal=(0,1,0)
+        {XMFLOAT3(-hw,+hh,-hd), col, XMFLOAT3(0,1,0)},
+        {XMFLOAT3(+hw,+hh,-hd), col, XMFLOAT3(0,1,0)},
+        {XMFLOAT3(+hw,+hh,+hd), col, XMFLOAT3(0,1,0)},
+        {XMFLOAT3(-hw,+hh,+hd), col, XMFLOAT3(0,1,0)},
+        // -Y (아랫면) normal=(0,-1,0)
+        {XMFLOAT3(-hw,-hh,+hd), col, XMFLOAT3(0,-1,0)},
+        {XMFLOAT3(+hw,-hh,+hd), col, XMFLOAT3(0,-1,0)},
+        {XMFLOAT3(+hw,-hh,-hd), col, XMFLOAT3(0,-1,0)},
+        {XMFLOAT3(-hw,-hh,-hd), col, XMFLOAT3(0,-1,0)},
+        // -Z (앞면)  normal=(0,0,-1)
+        {XMFLOAT3(+hw,+hh,-hd), col, XMFLOAT3(0,0,-1)},
+        {XMFLOAT3(-hw,+hh,-hd), col, XMFLOAT3(0,0,-1)},
+        {XMFLOAT3(-hw,-hh,-hd), col, XMFLOAT3(0,0,-1)},
+        {XMFLOAT3(+hw,-hh,-hd), col, XMFLOAT3(0,0,-1)},
+        // +Z (뒷면)  normal=(0,0,1)
+        {XMFLOAT3(-hw,+hh,+hd), col, XMFLOAT3(0,0,1)},
+        {XMFLOAT3(+hw,+hh,+hd), col, XMFLOAT3(0,0,1)},
+        {XMFLOAT3(+hw,-hh,+hd), col, XMFLOAT3(0,0,1)},
+        {XMFLOAT3(-hw,-hh,+hd), col, XMFLOAT3(0,0,1)},
+        // +X (오른면) normal=(1,0,0)
+        {XMFLOAT3(+hw,+hh,-hd), col, XMFLOAT3(1,0,0)},
+        {XMFLOAT3(+hw,+hh,+hd), col, XMFLOAT3(1,0,0)},
+        {XMFLOAT3(+hw,-hh,+hd), col, XMFLOAT3(1,0,0)},
+        {XMFLOAT3(+hw,-hh,-hd), col, XMFLOAT3(1,0,0)},
+        // -X (왼면)  normal=(-1,0,0)
+        {XMFLOAT3(-hw,+hh,+hd), col, XMFLOAT3(-1,0,0)},
+        {XMFLOAT3(-hw,+hh,-hd), col, XMFLOAT3(-1,0,0)},
+        {XMFLOAT3(-hw,-hh,-hd), col, XMFLOAT3(-1,0,0)},
+        {XMFLOAT3(-hw,-hh,+hd), col, XMFLOAT3(-1,0,0)},
+    };
+
+    m_nVertices = 24;
     m_nStride = sizeof(CDiffusedVertex);
-    m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
- 
-    CDiffusedVertex pVertices[9];
-    // 바닥 (0~3)
-    pVertices[0] = CDiffusedVertex(XMFLOAT3(-w, 0.0f, -d),    RANDOM_COLOR);
-    pVertices[1] = CDiffusedVertex(XMFLOAT3( w, 0.0f, -d),    RANDOM_COLOR);
-    pVertices[2] = CDiffusedVertex(XMFLOAT3( w, 0.0f,  d),    RANDOM_COLOR);
-    pVertices[3] = CDiffusedVertex(XMFLOAT3(-w, 0.0f,  d),    RANDOM_COLOR);
-    // 어깨 (4~7)
-    pVertices[4] = CDiffusedVertex(XMFLOAT3(-sw, sh, -sd),    RANDOM_COLOR);
-    pVertices[5] = CDiffusedVertex(XMFLOAT3( sw, sh, -sd),    RANDOM_COLOR);
-    pVertices[6] = CDiffusedVertex(XMFLOAT3( sw, sh,  sd),    RANDOM_COLOR);
-    pVertices[7] = CDiffusedVertex(XMFLOAT3(-sw, sh,  sd),    RANDOM_COLOR);
-    // 꼭짓점 (8)
-    pVertices[8] = CDiffusedVertex(XMFLOAT3(0.0f, h, 0.0f),   RANDOM_COLOR);
- 
-    CalculateBoundingBoxExtents(pVertices, m_nVertices);
- 
+	m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
+    CalculateBoundingBoxExtents(v, m_nVertices);
+
+    // 정점 버퍼 업로드
     m_pd3dVertexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList,
-        pVertices, m_nStride * m_nVertices,
+        v, m_nVertices * m_nStride,
         D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
         &m_pd3dVertexUploadBuffer);
+
     m_d3dVertexBufferView.BufferLocation = m_pd3dVertexBuffer->GetGPUVirtualAddress();
-    m_d3dVertexBufferView.StrideInBytes  = m_nStride;
-    m_d3dVertexBufferView.SizeInBytes    = m_nStride * m_nVertices;
- 
-    m_nIndices = 42;
-    UINT pnIndices[42] = {
-        // 측면 4개 (각 사다리꼴 = 2 삼각형)
-        0, 4, 5,   0, 5, 1,
-        1, 5, 6,   1, 6, 2,
-        2, 6, 7,   2, 7, 3,
-        3, 7, 4,   3, 4, 0,
-        // 상단 피라미드 (4 삼각형)
-        4, 8, 5,
-        5, 8, 6,
-        6, 8, 7,
-        7, 8, 4,
-        // 바닥 (2 삼각형)
-        0, 1, 2,   0, 2, 3
-    };
- 
+    m_d3dVertexBufferView.StrideInBytes = m_nStride;
+    m_d3dVertexBufferView.SizeInBytes = m_nStride * m_nVertices;
+
+    // 인덱스 — 6면 × 2삼각형 × 3 = 36
+    UINT indices[36];
+    for (int f = 0; f < 6; ++f) {
+        int b = f * 4;
+        indices[f * 6 + 0] = b + 0; indices[f * 6 + 1] = b + 1; indices[f * 6 + 2] = b + 2;
+        indices[f * 6 + 3] = b + 0; indices[f * 6 + 4] = b + 2; indices[f * 6 + 5] = b + 3;
+    }
+    m_nIndices = 36;
     m_pd3dIndexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList,
-        pnIndices, sizeof(UINT) * m_nIndices,
+        indices, sizeof(UINT) * m_nIndices,
         D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER,
         &m_pd3dIndexUploadBuffer);
+
     m_d3dIndexBufferView.BufferLocation = m_pd3dIndexBuffer->GetGPUVirtualAddress();
-    m_d3dIndexBufferView.Format         = DXGI_FORMAT_R32_UINT;
-    m_d3dIndexBufferView.SizeInBytes    = sizeof(UINT) * m_nIndices;
+    m_d3dIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+    m_d3dIndexBufferView.SizeInBytes = sizeof(UINT) * m_nIndices;
+
+    
 }
  
 CWallMesh::~CWallMesh() {}
@@ -711,23 +769,47 @@ CStairMesh::~CStairMesh() {}
 CJointPartMesh::CJointPartMesh(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, float fWidth, float fHeight, float fDepth, XMFLOAT4 color)
     : CMesh(pd3dDevice, pd3dCommandList)
 {
-    m_nVertices = 8;
-    m_nStride = sizeof(CDiffusedVertex);
-    m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-
+  
     float w = fWidth * 0.5f;
     float d = fDepth * 0.5f;
     float h = fHeight;
 
-    CDiffusedVertex pVertices[8];
-    pVertices[0] = CDiffusedVertex(XMFLOAT3(-w, 0.0f, -d), color);
-    pVertices[1] = CDiffusedVertex(XMFLOAT3(w, 0.0f, -d), color);
-    pVertices[2] = CDiffusedVertex(XMFLOAT3(w, 0.0f, d), color);
-    pVertices[3] = CDiffusedVertex(XMFLOAT3(-w, 0.0f, d), color);
-    pVertices[4] = CDiffusedVertex(XMFLOAT3(-w, -h, -d), color);
-    pVertices[5] = CDiffusedVertex(XMFLOAT3(w, -h, -d), color);
-    pVertices[6] = CDiffusedVertex(XMFLOAT3(w, -h, d), color);
-    pVertices[7] = CDiffusedVertex(XMFLOAT3(-w, -h, d), color);
+    CDiffusedVertex pVertices[24] = {
+        // +Y 윗면 (y=0)
+        {XMFLOAT3(-w, 0, -d), color, XMFLOAT3(0,1,0)},
+        {XMFLOAT3(+w, 0, -d), color, XMFLOAT3(0,1,0)},
+        {XMFLOAT3(+w, 0, +d), color, XMFLOAT3(0,1,0)},
+        {XMFLOAT3(-w, 0, +d), color, XMFLOAT3(0,1,0)},
+        // -Y 아랫면 (y=-h)
+        {XMFLOAT3(-w,-h, +d), color, XMFLOAT3(0,-1,0)},
+        {XMFLOAT3(+w,-h, +d), color, XMFLOAT3(0,-1,0)},
+        {XMFLOAT3(+w,-h, -d), color, XMFLOAT3(0,-1,0)},
+        {XMFLOAT3(-w,-h, -d), color, XMFLOAT3(0,-1,0)},
+        // -Z 앞면
+        {XMFLOAT3(+w, 0, -d), color, XMFLOAT3(0,0,-1)},
+        {XMFLOAT3(-w, 0, -d), color, XMFLOAT3(0,0,-1)},
+        {XMFLOAT3(-w,-h, -d), color, XMFLOAT3(0,0,-1)},
+        {XMFLOAT3(+w,-h, -d), color, XMFLOAT3(0,0,-1)},
+        // +Z 뒷면
+        {XMFLOAT3(-w, 0, +d), color, XMFLOAT3(0,0,1)},
+        {XMFLOAT3(+w, 0, +d), color, XMFLOAT3(0,0,1)},
+        {XMFLOAT3(+w,-h, +d), color, XMFLOAT3(0,0,1)},
+        {XMFLOAT3(-w,-h, +d), color, XMFLOAT3(0,0,1)},
+        // +X 오른면
+        {XMFLOAT3(+w, 0, -d), color, XMFLOAT3(1,0,0)},
+        {XMFLOAT3(+w, 0, +d), color, XMFLOAT3(1,0,0)},
+        {XMFLOAT3(+w,-h, +d), color, XMFLOAT3(1,0,0)},
+        {XMFLOAT3(+w,-h, -d), color, XMFLOAT3(1,0,0)},
+        // -X 왼면
+        {XMFLOAT3(-w, 0, +d), color, XMFLOAT3(-1,0,0)},
+        {XMFLOAT3(-w, 0, -d), color, XMFLOAT3(-1,0,0)},
+        {XMFLOAT3(-w,-h, -d), color, XMFLOAT3(-1,0,0)},
+        {XMFLOAT3(-w,-h, +d), color, XMFLOAT3(-1,0,0)},
+    };
+
+    m_nVertices = 24;
+    m_nStride = sizeof(CDiffusedVertex);
+    m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
     CalculateBoundingBoxExtents(pVertices, m_nVertices);
 
@@ -736,17 +818,15 @@ CJointPartMesh::CJointPartMesh(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
     m_d3dVertexBufferView.StrideInBytes = m_nStride;
     m_d3dVertexBufferView.SizeInBytes = m_nStride * m_nVertices;
 
+    // 인덱스 (6면 × 2삼각형 × 3 = 36)
+    UINT indices[36];
+    for (int f = 0; f < 6; f++) {
+        int b = f * 4;
+        indices[f * 6 + 0] = b + 0; indices[f * 6 + 1] = b + 1; indices[f * 6 + 2] = b + 2;
+        indices[f * 6 + 3] = b + 0; indices[f * 6 + 4] = b + 2; indices[f * 6 + 5] = b + 3;
+    }
     m_nIndices = 36;
-    UINT pnIndices[36] = {
-        0, 1, 5,  0, 5, 4,
-        3, 2, 6,  3, 6, 7,
-        0, 3, 2,  0, 2, 1,
-        4, 5, 6,  4, 6, 7,
-        1, 2, 6,  1, 6, 5,
-        0, 4, 7,  0, 7, 3
-    };
-
-    m_pd3dIndexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pnIndices, sizeof(UINT) * m_nIndices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, &m_pd3dIndexUploadBuffer);
+    m_pd3dIndexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, indices, sizeof(UINT) * m_nIndices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, &m_pd3dIndexUploadBuffer);
     m_d3dIndexBufferView.BufferLocation = m_pd3dIndexBuffer->GetGPUVirtualAddress();
     m_d3dIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
     m_d3dIndexBufferView.SizeInBytes = sizeof(UINT) * m_nIndices;
@@ -759,50 +839,85 @@ CJointPartMesh::~CJointPartMesh() {}
 CMutantMesh::CMutantMesh(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, float fScale)
     : CMesh(pd3dDevice, pd3dCommandList)
 {
-    float s = fScale;
-    m_nVertices = 14;
+
+    // 색상 디테일 추가 (부위별로 다른 색상)
+    XMFLOAT4 skinColor(0.4f, 0.7f, 0.2f, 1.0f);  // 피부: 돌연변이 녹색
+    XMFLOAT4 shirtColor(0.4f, 0.3f, 0.2f, 1.0f); // 상의: 칙칙한 갈색 (죄수복 느낌)
+    XMFLOAT4 pantsColor(0.2f, 0.2f, 0.3f, 1.0f); // 하의: 어두운 군청색
+
+    m_nVertices = 6 * 24;  // 48 → 144
+    m_nIndices = 6 * 36;  // 216 그대로
     m_nStride = sizeof(CDiffusedVertex);
     m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
-    XMFLOAT4 skin(0.3f, 0.5f, 0.1f, 1.0f);
-    XMFLOAT4 horn(0.8f, 0.1f, 0.1f, 1.0f);
+    CDiffusedVertex pVertices[144];
 
-    CDiffusedVertex pVertices[14];
-    pVertices[0] = CDiffusedVertex(XMFLOAT3(-s, s, -s), skin);
-    pVertices[1] = CDiffusedVertex(XMFLOAT3(s, s, -s), skin);
-    pVertices[2] = CDiffusedVertex(XMFLOAT3(s, 0.0f, -s), skin);
-    pVertices[3] = CDiffusedVertex(XMFLOAT3(-s, 0.0f, -s), skin);
-    pVertices[4] = CDiffusedVertex(XMFLOAT3(-s, s, s), skin);
-    pVertices[5] = CDiffusedVertex(XMFLOAT3(s, s, s), skin);
-    pVertices[6] = CDiffusedVertex(XMFLOAT3(s, 0.0f, s), skin);
-    pVertices[7] = CDiffusedVertex(XMFLOAT3(-s, 0.0f, s), skin);
-    pVertices[8] = CDiffusedVertex(XMFLOAT3(-s * 2.0f, s * 1.5f, 0.0f), horn);
-    pVertices[9] = CDiffusedVertex(XMFLOAT3(s * 2.0f, s * 1.5f, 0.0f), horn);
-    pVertices[10] = CDiffusedVertex(XMFLOAT3(-s * 0.5f, -s, -s * 0.5f), skin);
-    pVertices[11] = CDiffusedVertex(XMFLOAT3(s * 0.5f, -s, -s * 0.5f), skin);
-    pVertices[12] = CDiffusedVertex(XMFLOAT3(s * 0.5f, -s, s * 0.5f), skin);
-    pVertices[13] = CDiffusedVertex(XMFLOAT3(-s * 0.5f, -s, s * 0.5f), skin);
+    // AddBox24: 파트 하나(24정점)를 offset 위치에 기록
+    auto AddBox24 = [&](int offset,
+        float minX, float maxX,
+        float minY, float maxY,
+        float minZ, float maxZ,
+        XMFLOAT4 col)
+        {
+            CDiffusedVertex* v = &pVertices[offset];
+            // +Y
+            v[0] = { XMFLOAT3(minX,maxY,minZ),col,XMFLOAT3(0,1,0) };
+            v[1] = { XMFLOAT3(maxX,maxY,minZ),col,XMFLOAT3(0,1,0) };
+            v[2] = { XMFLOAT3(maxX,maxY,maxZ),col,XMFLOAT3(0,1,0) };
+            v[3] = { XMFLOAT3(minX,maxY,maxZ),col,XMFLOAT3(0,1,0) };
+            // -Y
+            v[4] = { XMFLOAT3(minX,minY,maxZ),col,XMFLOAT3(0,-1,0) };
+            v[5] = { XMFLOAT3(maxX,minY,maxZ),col,XMFLOAT3(0,-1,0) };
+            v[6] = { XMFLOAT3(maxX,minY,minZ),col,XMFLOAT3(0,-1,0) };
+            v[7] = { XMFLOAT3(minX,minY,minZ),col,XMFLOAT3(0,-1,0) };
+            // -Z
+            v[8] = { XMFLOAT3(maxX,maxY,minZ),col,XMFLOAT3(0,0,-1) };
+            v[9] = { XMFLOAT3(minX,maxY,minZ),col,XMFLOAT3(0,0,-1) };
+            v[10] = { XMFLOAT3(minX,minY,minZ),col,XMFLOAT3(0,0,-1) };
+            v[11] = { XMFLOAT3(maxX,minY,minZ),col,XMFLOAT3(0,0,-1) };
+            // +Z
+            v[12] = { XMFLOAT3(minX,maxY,maxZ),col,XMFLOAT3(0,0,1) };
+            v[13] = { XMFLOAT3(maxX,maxY,maxZ),col,XMFLOAT3(0,0,1) };
+            v[14] = { XMFLOAT3(maxX,minY,maxZ),col,XMFLOAT3(0,0,1) };
+            v[15] = { XMFLOAT3(minX,minY,maxZ),col,XMFLOAT3(0,0,1) };
+            // +X
+            v[16] = { XMFLOAT3(maxX,maxY,minZ),col,XMFLOAT3(1,0,0) };
+            v[17] = { XMFLOAT3(maxX,maxY,maxZ),col,XMFLOAT3(1,0,0) };
+            v[18] = { XMFLOAT3(maxX,minY,maxZ),col,XMFLOAT3(1,0,0) };
+            v[19] = { XMFLOAT3(maxX,minY,minZ),col,XMFLOAT3(1,0,0) };
+            // -X
+            v[20] = { XMFLOAT3(minX,maxY,maxZ),col,XMFLOAT3(-1,0,0) };
+            v[21] = { XMFLOAT3(minX,maxY,minZ),col,XMFLOAT3(-1,0,0) };
+            v[22] = { XMFLOAT3(minX,minY,minZ),col,XMFLOAT3(-1,0,0) };
+            v[23] = { XMFLOAT3(minX,minY,maxZ),col,XMFLOAT3(-1,0,0) };
+        };
+
+    float s = fScale;
+    AddBox24(0, -0.7f * s, -0.1f * s, 0.0f * s, 1.5f * s, -0.4f * s, 0.4f * s, pantsColor); // 왼다리
+    AddBox24(24, 0.1f * s, 0.7f * s, 0.0f * s, 1.5f * s, -0.4f * s, 0.4f * s, pantsColor); // 오른다리
+    AddBox24(48, -0.8f * s, 0.8f * s, 1.5f * s, 3.5f * s, -0.5f * s, 0.5f * s, shirtColor); // 몸통
+    AddBox24(72, -0.5f * s, 0.5f * s, 3.5f * s, 4.5f * s, -0.5f * s, 0.5f * s, skinColor);  // 머리
+    AddBox24(96, -1.3f * s, -0.8f * s, 1.2f * s, 3.3f * s, -0.3f * s, 0.3f * s, skinColor);  // 왼팔
+    AddBox24(120, 0.8f * s, 1.3f * s, 1.2f * s, 3.3f * s, -0.3f * s, 0.3f * s, skinColor);  // 오른팔
 
     CalculateBoundingBoxExtents(pVertices, m_nVertices);
+
 
     m_pd3dVertexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pVertices, m_nStride * m_nVertices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, &m_pd3dVertexUploadBuffer);
     m_d3dVertexBufferView.BufferLocation = m_pd3dVertexBuffer->GetGPUVirtualAddress();
     m_d3dVertexBufferView.StrideInBytes = m_nStride;
     m_d3dVertexBufferView.SizeInBytes = m_nStride * m_nVertices;
 
-    m_nIndices = 72;
-    UINT pnIndices[72] = {
-        0, 1, 2,  0, 2, 3,
-        5, 4, 7,  5, 7, 6,
-        4, 5, 1,  4, 1, 0,
-        3, 2, 6,  3, 6, 7,
-        0, 4, 8,  4, 7, 8,  7, 3, 8,  3, 0, 8,
-        1, 5, 9,  5, 6, 9,  6, 2, 9,  2, 1, 9,
-        3, 2, 11,  3, 11, 10,
-        2, 6, 12,  2, 12, 11,
-        6, 7, 13,  6, 13, 12,
-        7, 3, 10,  7, 10, 13
-    };
+    m_nIndices = 216; // 6개 파트 * 36인덱스
+    UINT pnIndices[216];
+    int idx = 0;
+    for (int i = 0; i < 6; i++) {          // 파트
+        for (int f = 0; f < 6; f++) {       // 면
+            int b = i * 24 + f * 4;         // ← 24정점 기준
+            pnIndices[idx++] = b + 0; pnIndices[idx++] = b + 1; pnIndices[idx++] = b + 2;
+            pnIndices[idx++] = b + 0; pnIndices[idx++] = b + 2; pnIndices[idx++] = b + 3;
+        }
+    }
 
     m_pd3dIndexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pnIndices, sizeof(UINT) * m_nIndices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, &m_pd3dIndexUploadBuffer);
     m_d3dIndexBufferView.BufferLocation = m_pd3dIndexBuffer->GetGPUVirtualAddress();
@@ -895,3 +1010,52 @@ CGunMesh::CGunMesh(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dComm
     delete[] pnIndices;
 }
 CGunMesh::~CGunMesh() {}
+
+struct Vertex2D { XMFLOAT2 pos; XMFLOAT4 color; };
+
+CCrosshairMesh::CCrosshairMesh(ID3D12Device* pd3dDevice,
+    ID3D12GraphicsCommandList* pd3dCommandList,
+    float fHalfLen, float fThick, XMFLOAT4 col)
+    : CMesh(pd3dDevice, pd3dCommandList)
+{
+    m_nVertices = 8;
+    m_nStride = sizeof(Vertex2D);
+    m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
+    float hw = fThick;
+    float hl = fHalfLen;
+
+    Vertex2D v[8] = {
+        // 가로 막대 (horizontal)
+            {{ -hl, -hw }, col}, {{ hl, -hw }, col},
+            {{ hl,  hw }, col}, {{ -hl,  hw }, col},
+            // 세로 막대 (vertical)
+            {{ -hw, -hl }, col}, {{ hw, -hl }, col},
+            {{ hw,   hl }, col}, {{ -hw,  hl }, col},
+    };
+
+    m_nIndices = 12;
+    UINT idx[12] = {
+        0,1,2, 0,2,3,   // 가로
+        4,5,6, 4,6,7    // 세로
+    };
+
+    m_pd3dVertexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList,
+        v, m_nStride * m_nVertices,
+        D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
+        &m_pd3dVertexUploadBuffer);
+    // 버텍스 버퍼 뷰
+    m_d3dVertexBufferView.BufferLocation = m_pd3dVertexBuffer->GetGPUVirtualAddress();
+    m_d3dVertexBufferView.SizeInBytes = m_nStride * m_nVertices;
+    m_d3dVertexBufferView.StrideInBytes = m_nStride;
+
+    m_pd3dIndexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList,
+        idx, sizeof(UINT) * m_nIndices,
+        D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER,
+        &m_pd3dIndexUploadBuffer);
+
+    // 인덱스 버퍼 뷰
+    m_d3dIndexBufferView.BufferLocation = m_pd3dIndexBuffer->GetGPUVirtualAddress();
+    m_d3dIndexBufferView.SizeInBytes = sizeof(UINT) * m_nIndices;
+    m_d3dIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+}

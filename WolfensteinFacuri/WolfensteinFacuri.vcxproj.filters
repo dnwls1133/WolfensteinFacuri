@@ -144,6 +144,15 @@
     <ClInclude Include="Aircraft.h">
       <Filter>헤더 파일\Object\Player</Filter>
     </ClInclude>
+    <ClInclude Include="WFSMap2Scene.h">
+      <Filter>헤더 파일\Class</Filter>
+    </ClInclude>
+    <ClInclude Include="JointPlayer.h">
+      <Filter>헤더 파일\Object\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="gun.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WolfensteinFacuri.cpp">
@@ -226,6 +235,15 @@
     </ClCompile>
     <ClCompile Include="Aircraft.cpp">
       <Filter>소스 파일\Object\Player</Filter>
+    </ClCompile>
+    <ClCompile Include="WFSMap2Scene.cpp">
+      <Filter>소스 파일\Class</Filter>
+    </ClCompile>
+    <ClCompile Include="JointPlayer.cpp">
+      <Filter>소스 파일\Object\Player</Filter>
+    </ClCompile>
+    <ClCompile Include="gun.cpp">
+      <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

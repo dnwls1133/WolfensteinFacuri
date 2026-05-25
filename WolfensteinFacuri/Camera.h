@@ -99,6 +99,7 @@ public:
 	void Rotate(float fPitch = 0.0f, float fYaw = 0.0f, float fRoll=0.0f);
 	void Update();
 
+	void setLook(const XMFLOAT3& look) { m_xmf3Look = look; }
 
 	// [D3D12  추가] 셰이더 상수 변수 관리
 	virtual void CreateShaderVariables(ID3D12Device* pd3dDevice

@@ -11,6 +11,16 @@ typedef unsigned long long ULONGLONG;
 
 class CColliderManager;
 
+// 라이트 데이터 구조체 (b2 슬롯용)
+struct CB_LIGHT_INFO {
+	XMFLOAT3 m_xmf3Direction; // 빛이 향하는 방향
+	float    m_fAmbient;
+	XMFLOAT3 m_xmf3Color;
+	float    m_fPad;
+};
+
+
+
 class CScene
 {
 public:
@@ -28,6 +38,7 @@ protected:
 	CMissileMesh* m_pMissileMesh{ NULL };
 	CPlaneMesh* m_pFloorMesh{ NULL };
 	CWallMesh* m_pWallMesh{ NULL };
+	CCrosshairMesh* m_pCrosshairMesh{ NULL };
 	std::vector<C3DTextMesh*> m_vpTextMeshes; 
 
 
@@ -62,6 +73,10 @@ protected:
 	CInstancebuffer   m_wallInstanceBuffer;
 	CInstancebuffer   m_floorInstanceBuffer;
 
+	
+	CCrosshairShader* m_pCrosshairShader = NULL;
+
+
 	UINT m_nWallInstances = 0;
 	UINT m_nFloorInstances = 0;
 
@@ -69,6 +84,14 @@ protected:
 	// [추가] OOBB 와이어프레임 디버그 자원
 	CWireframeShader* m_pWireShader = NULL;
 	CCubeMesh*        m_pWireCubeMesh = NULL;   // 단위 큐브 (fWHD=2.0 → ±1)
+
+	// 카메라 3인칭 / 1인칭 토글 플래그
+	bool m_bThirdPersonView = true; 
+
+	ID3D12Resource* m_pd3dcbLight = nullptr;
+	CB_LIGHT_INFO* m_pcbMappedLight = nullptr;
+	
+	float m_fLightTime = 0.0f;
 
 
 protected:

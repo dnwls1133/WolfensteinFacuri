@@ -20,6 +20,7 @@ public:
 
 	}
 
+	int m_nChoiceID{ 0 }; // 선택지 ID (1, 2, 3 등)
 
 };
 

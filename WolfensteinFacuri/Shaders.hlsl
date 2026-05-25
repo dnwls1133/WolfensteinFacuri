@@ -24,6 +24,15 @@ cbuffer cbCameraInfo : register(b1)
     matrix gmtxView;
     matrix gmtxProjection;
 };
+
+cbuffer cbLightInfo : register(b2)
+{
+    float3 gLightDir;
+    float gAmbient;
+    float3 gLightColor;
+    float gPad;
+}
+
 //struct cbGameObjectInfo
 //{
 //    matrix mtxWorld;
@@ -47,12 +56,14 @@ struct VS_INPUT
 {
     float3 position : POSITION; // CDiffusedVertex의 m_xmf3Position
     float4 color : COLOR;       // CDiffusedVertex의 m_xmf4Diffuse
+    float3 normal : NORMAL;
 };
 
 struct VS_OUTPUT
 {
     float4 position : SV_POSITION;
     float4 color : COLOR;
+    float3 normalW : NORMAL;
 };
 
 // ─────────────────────────────────────────────────────────
@@ -67,8 +78,8 @@ VS_OUTPUT VSDiffused(VS_INPUT input)
     output.position = mul(mul(
             mul(float4(input.position, 1.0f), gmtxWorld),
             gmtxView), gmtxProjection);
-    
     output.color = input.color * gObjectColor;
+    output.normalW = mul(float4(input.normal, 0.0f), gmtxWorld).xyz;
     return output;
 }
 
@@ -80,7 +91,8 @@ VS_OUTPUT VSDiffused(VS_INPUT input)
 struct VS_INPUT_INSTANCED
 {
     float3 position : POSITION;
-    float4 color    : COLOR;
+    float4 color : COLOR;
+    float3 normal : NORMAL;
     
     float4 instWorldR0 : INSTWORLD0;
     float4 instWorldR1 : INSTWORLD1;
@@ -107,6 +119,9 @@ VS_OUTPUT VSInstanced(VS_INPUT_INSTANCED input)
     output.position = mul(mul(worldPos, gmtxView), gmtxProjection);
     
     output.color = input.color * input.instColor;
+    
+    //output.color *= gObjectColor; // 인스턴스 색상과 게임 오브젝트 색상 모두 적용
+    output.normalW = mul(float4(input.normal, 0.0f), instWorld).xyz;
     return output;
 
 }
@@ -117,6 +132,40 @@ VS_OUTPUT VSInstanced(VS_INPUT_INSTANCED input)
 // ─────────────────────────────────────────────────────────
 float4 PSDiffused(VS_OUTPUT input) : SV_TARGET
 {
-    return input.color;
+    float3 N = normalize(input.normalW);
+    float3 L = normalize(-gLightDir); // 빛이 오는 방향
+    
+    float NdotL = max(dot(N, L), 0.0f);
+    float3 diffuse = gLightColor * NdotL;
+    float3 ambient = float3(gAmbient, gAmbient, gAmbient);
+    float3 lit = saturate(diffuse + ambient); // [0,1] 클램프
+    
+    return float4(input.color.rgb * lit, input.color.a);
 }
     
+
+struct VS_INPUT_2D
+{
+    float2 position : POSITION;
+    float4 color : COLOR;
+};
+
+struct VS_OUTPUT_2D
+{
+    float4 position : SV_POSITION;
+    float4 color : COLOR;
+};
+
+VS_OUTPUT_2D VSCrosshair(VS_INPUT_2D input)
+{
+    VS_OUTPUT_2D output;
+    output.position = float4(input.position, 0.0f, 1.0f);
+    
+    output.color = input.color;
+    return output;
+}
+
+float4 PSCrosshair(VS_OUTPUT_2D input) : SV_TARGET
+{
+    return input.color;
+}

@@ -1,5 +1,5 @@
 ﻿#include "stdafx.h"
-#include "GraphicsPipeline.h"
+#include "GraphicsHelpers.h"
 #include "Enemy.h"
 #include "Wall.h"
 #include "Scene.h"
@@ -50,6 +50,12 @@ CScene::~CScene()
 
 	if (m_pWireShader) m_pWireShader->Release();
 	if (m_pWireCubeMesh) m_pWireCubeMesh->Release();
+
+	if (m_pd3dcbLight) {
+		m_pd3dcbLight->Unmap(0, nullptr);
+		m_pd3dcbLight->Release();
+		m_pd3dcbLight = nullptr;
+	}
 }
 
 void CScene::ProcessInput(const InputState& InputState, float fElapsedTime)
@@ -65,7 +71,7 @@ void CScene::ProcessInput(const InputState& InputState, float fElapsedTime)
 
 void CScene::CreateGraphicsRootSignature(ID3D12Device* pd3dDevice)
 {
-	D3D12_ROOT_PARAMETER pd3dRootParameters[2];
+	D3D12_ROOT_PARAMETER pd3dRootParameters[3];
 	::ZeroMemory(pd3dRootParameters, sizeof(pd3dRootParameters));
 
 	// b0 : CB_GAMEOBJECT_INFO (게임 객체별 상수 버퍼)
@@ -79,6 +85,14 @@ void CScene::CreateGraphicsRootSignature(ID3D12Device* pd3dDevice)
 	pd3dRootParameters[1].Descriptor.ShaderRegister = 1; // b1
 	pd3dRootParameters[1].Descriptor.RegisterSpace = 0;
 	pd3dRootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+
+
+	// b2 : CB_LIGHT_INFO (조명 상수 버퍼) 
+	pd3dRootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	pd3dRootParameters[2].Descriptor.ShaderRegister = 2; // b2
+	pd3dRootParameters[2].Descriptor.RegisterSpace = 0;
+	pd3dRootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
 
 	// IA 활성화 플래그
 	D3D12_ROOT_SIGNATURE_FLAGS d3dRootSignatureFlags = 
@@ -152,7 +166,9 @@ void CScene::BuildSharedResources()
 	m_pParticleMesh = new CCubeMesh(m_pd3dDevice, m_pd3dCommandList, 0.2f);
 	m_pParticleMesh->AddRef();
 
-	
+	m_pCrosshairMesh = new CCrosshairMesh(m_pd3dDevice, m_pd3dCommandList, 0.05f);
+	m_pCrosshairMesh->AddRef();
+
 	C3DTextMesh* pTextMesh = new C3DTextMesh(m_pd3dDevice, m_pd3dCommandList, "WOLFENSTEIN", 1.0f, RANDOM_COLOR);
 	pTextMesh->AddRef();
 	m_vpTextMeshes.push_back(pTextMesh);
@@ -183,6 +199,22 @@ void CScene::BuildSharedResources()
 
 	m_pWireCubeMesh = new CCubeMesh(m_pd3dDevice, m_pd3dCommandList, 2.0f); // 정점 ±1
 	m_pWireCubeMesh->AddRef();
+
+
+	m_pCrosshairShader = new CCrosshairShader();
+	m_pCrosshairShader->CreateShader(m_pd3dDevice, m_pd3dGrahpicsRootSignature);
+	m_pCrosshairShader->AddRef();
+
+	UINT cbSize = ((sizeof(CB_LIGHT_INFO) + 255) & ~255);
+	m_pd3dcbLight = ::CreateBufferResource(m_pd3dDevice, m_pd3dCommandList, nullptr,
+		cbSize, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr);
+	m_pd3dcbLight->Map(0, nullptr, (void**)&m_pcbMappedLight);
+
+	// 초기값 설정
+	m_pcbMappedLight->m_xmf3Direction = XMFLOAT3(0.5f, -1.0f, 0.5f);
+	m_pcbMappedLight->m_fAmbient = 0.5f;
+	m_pcbMappedLight->m_xmf3Color = XMFLOAT3(1.0f, 0.95f, 0.85f);
+	m_pcbMappedLight->m_fPad = 0.0f;
 }
 
 
@@ -298,28 +330,62 @@ void CScene::UpdateCamera(float fElapsedTime)
 {
 	if (!m_pPlayer || !m_pCamera) return;
 
-	XMFLOAT3 playerPos = m_pPlayer->GetPosition();
-	XMFLOAT3 playerLook = m_pPlayer->GetDirection();
-	playerLook = Vector3::Normalize(playerLook);
+	if (m_bThirdPersonView)
+	{
+		XMFLOAT3 playerPos = m_pPlayer->GetPosition();
+		XMFLOAT3 playerLook = m_pPlayer->GetDirection();
+		playerLook = Vector3::Normalize(playerLook);
 
-	XMFLOAT3 offset = Vector3::ScalarProduct(playerLook, -5.0f, true);
-	XMFLOAT3 targetCameraPos = Vector3::Add(playerPos, offset);
-	targetCameraPos.y += 2.0f;
+		XMFLOAT3 offset = Vector3::ScalarProduct(playerLook, -5.0f, true);
+		XMFLOAT3 targetCameraPos = Vector3::Add(playerPos, offset);
+		targetCameraPos.y += 5.0f;
 
-	XMFLOAT3 currentCameraPos = m_pCamera->GetPosition();
-	XMVECTOR vCurrent = XMLoadFloat3(&currentCameraPos);
-	XMVECTOR vTarget = XMLoadFloat3(&targetCameraPos);
+		XMFLOAT3 currentCameraPos = m_pCamera->GetPosition();
+		XMVECTOR vCurrent = XMLoadFloat3(&currentCameraPos);
+		XMVECTOR vTarget = XMLoadFloat3(&targetCameraPos);
 
-	const float fFollowSpeed = 5.0f;
-	float t = fFollowSpeed * TIMER->GetTimeElapsed();
-	if (t > 1.0f) t = 1.0f;
+		const float fFollowSpeed = 5.0f;
+		float t = fFollowSpeed * TIMER->GetTimeElapsed();
+		if (t > 1.0f) t = 0.1f;
 
-	XMVECTOR vLerp = XMVectorLerp(vCurrent, vTarget, t);
-	XMFLOAT3 lerpPos;
-	XMStoreFloat3(&lerpPos, vLerp);
+		XMVECTOR vLerp = XMVectorLerp(vCurrent, vTarget, t);
+		XMFLOAT3 lerpPos;
+		XMStoreFloat3(&lerpPos, vLerp);
 
-	m_pCamera->SetPosition(lerpPos);
-	m_pCamera->Update();
+		m_pCamera->SetPosition(lerpPos);
+		m_pCamera->setLook(playerLook);
+		m_pCamera->Update();
+	}
+	else
+	{
+		XMFLOAT3 playerPos = m_pPlayer->GetPosition();
+		XMFLOAT3 playerLook = m_pPlayer->GetDirection();
+		playerLook = Vector3::Normalize(playerLook);
+
+		XMFLOAT3 offset = Vector3::ScalarProduct(playerLook, -0.5f, true);
+		XMFLOAT3 targetCameraPos = Vector3::Add(playerPos, offset);
+		targetCameraPos.y += 4.0f;
+
+		XMFLOAT3 currentCameraPos = m_pCamera->GetPosition();
+		XMVECTOR vCurrent = XMLoadFloat3(&currentCameraPos);
+		XMVECTOR vTarget = XMLoadFloat3(&targetCameraPos);
+
+	/*	const float fFollowSpeed = 5.0f;
+		float t = fFollowSpeed * TIMER->GetTimeElapsed();
+		if (t > 1.0f) t = 0.1f;
+
+		XMVECTOR vLerp = XMVectorLerp(vCurrent, vTarget, t);
+		XMFLOAT3 lerpPos;
+		XMStoreFloat3(&lerpPos, vLerp);*/
+		
+
+
+		m_pCamera->SetPosition(targetCameraPos);
+		m_pCamera->setLook(playerLook);
+		m_pCamera->Update();
+	}
+
+	
 
 }
 
@@ -330,6 +396,11 @@ void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera
 	
 	// 1. Root Signature 바인딩
 	pd3dCommandList->SetGraphicsRootSignature(m_pd3dGrahpicsRootSignature);
+
+	if(m_pd3dcbLight)
+		pd3dCommandList->SetGraphicsRootConstantBufferView(2,
+			m_pd3dcbLight->GetGPUVirtualAddress());
+
 
 	// 2. 뷰포트/가위 + 카메라 상수 버퍼(b1) 갱신/바인딩
 	pCamera->SetViewportsAndScissorRects(pd3dCommandList);
@@ -414,6 +485,13 @@ void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera
 	// 6) 디버그 OOBB 와이어프레임 (F1 토글)
 	if (CScene::s_bDebugWireframe)
 		RenderDebugBoxes(pd3dCommandList, pCamera);
+
+	if (!m_bThirdPersonView)
+	{
+		m_pCrosshairShader->Render(pd3dCommandList, nullptr);
+		// CCrosshairMesh는 상수버퍼 없이 바로 DrawIndexedInstanced
+		m_pCrosshairMesh->Render(pd3dCommandList);
+	}
 }
 
 // [추가] 모든 활성 오브젝트와 플레이어의 OOBB를 와이어 큐브로 렌더

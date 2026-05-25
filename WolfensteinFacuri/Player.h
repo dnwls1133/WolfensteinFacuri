@@ -25,6 +25,8 @@ public:
 	bool IsDestroyed() const { return m_playerDestroyed; }
 	bool IsWon() const { return m_playerWon; }
 	
+	void SetWon() { m_playerWon = true; }
+
 	void Move(DWORD dwDirection, float fDistance);
 	void Rotate(float fPitch, float fYaw, float fRoll);
 

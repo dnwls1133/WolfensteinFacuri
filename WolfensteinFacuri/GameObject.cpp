@@ -29,7 +29,13 @@ CGameObject::~CGameObject()
 
 void CGameObject::GenerateBoundingBox()
 {
-	m_xmOOBB.Center = m_xmf3Position;
+	XMFLOAT3 localCenter = m_pMesh->GetLocalCenter();
+	XMVECTOR vOffset = XMLoadFloat3(&localCenter);
+	XMVECTOR vRotated = XMVector3Rotate(vOffset, XMLoadFloat4(&m_xmf4Rotation));
+	XMFLOAT3 worldCenter;
+	XMStoreFloat3(&worldCenter, XMLoadFloat3(&m_xmf3Position) + vRotated);
+
+	m_xmOOBB.Center = worldCenter;
 	m_xmOOBB.Extents = m_pMesh->GetBoundingBoxExtents();
 	m_xmOOBB.Orientation = m_xmf4Rotation;
 }
@@ -80,7 +86,14 @@ void CGameObject::Update()
 	// salce * rotation * translation
 	m_xmf4x4World = Matrix4x4::Multiply(mtxRotate, mtxTranslate);
 
-	m_xmOOBB.Center = m_xmf3Position;
+	XMFLOAT3 localCenter = m_pMesh->GetLocalCenter();
+	XMVECTOR vOffset = XMLoadFloat3(&localCenter);
+	XMVECTOR vRotated = XMVector3Rotate(vOffset, XMLoadFloat4(&m_xmf4Rotation));
+	XMFLOAT3 worldCenter;
+	XMStoreFloat3(&worldCenter, XMLoadFloat3(&m_xmf3Position) + vRotated);
+
+
+	m_xmOOBB.Center = worldCenter;
 	m_xmOOBB.Orientation = m_xmf4Rotation;
 
 }

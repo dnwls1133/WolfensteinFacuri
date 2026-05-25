@@ -1,20 +1,21 @@
 #pragma once
 #include "Scene.h"
 
+
 class CStairMesh;
 class CJointPlayer;
 
-class WFSMap1Scene :
-    public CScene
+class WFSMap2Scene :
+	public CScene
 {
 public:
-    WFSMap1Scene(CColliderManager* pCollider, CCamera* pCamera);
-	virtual ~WFSMap1Scene();
+	WFSMap2Scene(CColliderManager* pCollider, CCamera* pCamera);
+	virtual ~WFSMap2Scene();
 
 	virtual void Animate(float fElapsedTime) override;
 	virtual void ProcessInput(const InputState& InputState, float fElapsedTime) override;
 
-	bool IsWall(float wx, float wz) const; 
+	bool IsWall(float wx, float wz) const;
 
 	float GetFloorY(float wx, float wz) const;
 
@@ -41,11 +42,10 @@ private:
 	bool LoadMapFile(const wchar_t* relPath);
 	void SpawnFromGrid();
 
-	void SpawnWall (float wx, float wz);
+	void SpawnWall(float wx, float wz);
 	void SpawnFloor(float wx, float wz, float fHeight = 0.0f);
 	void SpawnStair(float wx, float wz);
 	void SpawnEnemy(float wx, float wz);
 	void PlacePlayer(float wx, float wz);
 
 };
-

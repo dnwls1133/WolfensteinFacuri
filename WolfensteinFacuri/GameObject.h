@@ -17,6 +17,7 @@ enum ObjectType
 	OBJ_EFFECT,
 	OBJ_TEXT,
 	OBJ_MONSTER,
+	OBJ_GUN,
 	OBJ_CHOICE,
 	NONE
 };
@@ -64,6 +65,8 @@ public:
 	// �޽� / ���̴� ����
 	void SetMesh(CMesh* pMesh);
 	void SetShader(CShader* pShader);
+
+	void SetWorldMatrix(XMFLOAT4X4 xmf4x4World) { m_xmf4x4World = xmf4x4World; }
 
 
 	void SetColor(DWORD dwColor) { 

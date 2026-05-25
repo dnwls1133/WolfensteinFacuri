@@ -2,6 +2,7 @@
 #include "ChoiceCube.h"
 #include "Text.h"
 #include "WFSMap1Scene.h"
+#include "WFSMap2Scene.h"
 #include "GalagaScene.h"
 #include "MapChoiceScene.h"
 
@@ -60,9 +61,18 @@ void MapChoiceScene::ProcessInput(const InputState& InputState, float fElapsedTi
 			}
 
 			// 선택된 객체가 있으면 처리
-			if (pSelectedObject)
+			if (pSelectedObject && pSelectedObject->GetObjectType() == OBJ_CHOICE)
 			{
-				SCENE_MANAGER->RequestSceneChange(new WFSMap1Scene(m_pColliderManager, m_pCamera));
+				CChoiceCube* pChoice = static_cast<CChoiceCube*>(pSelectedObject);
+				switch(pChoice->m_nChoiceID)
+				{
+				case 1:
+					SCENE_MANAGER->RequestSceneChange(new WFSMap1Scene(m_pColliderManager, m_pCamera));
+					break;
+				case 2:
+					SCENE_MANAGER->RequestSceneChange(new WFSMap2Scene(m_pColliderManager, m_pCamera));
+					break;
+				}
 			}
 
 
@@ -97,6 +107,7 @@ void MapChoiceScene::BuildSceneObjects()
 	pChoiceCube->CreateShaderVariables(m_pd3dDevice, m_pd3dCommandList);
 	pChoiceCube->SetColor(XMFLOAT4(1.0f, 0.0f, 0.0f, 1.f)); // 빨간색으로 설정
 	pChoiceCube->GenerateBoundingBox(); // OOBB 생성
+	pChoiceCube->m_nChoiceID = 1; 
 	AddObject(pChoiceCube);
 
 	CText* pChoiceText = new CText(TEXT_CHOICE);
@@ -118,6 +129,7 @@ void MapChoiceScene::BuildSceneObjects()
 	pChoiceCube2->CreateShaderVariables(m_pd3dDevice, m_pd3dCommandList);
 	pChoiceCube2->SetColor(XMFLOAT4(0.0f, 0.0f, 1.0f, 1.f)); // 파란색으로 설정
 	pChoiceCube2->GenerateBoundingBox(); // OOBB 생성
+	pChoiceCube2->m_nChoiceID = 2;
 	AddObject(pChoiceCube2);
 
 	CText* pChoiceText2 = new CText(TEXT_CHOICE);

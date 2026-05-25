@@ -138,7 +138,9 @@
     <ClInclude Include="ChoiceCube.h" />
     <ClInclude Include="CGameFramework.h" />
     <ClInclude Include="ColliderManager.h" />
+    <ClInclude Include="gun.h" />
     <ClInclude Include="InputState.h" />
+    <ClInclude Include="JointPlayer.h" />
     <ClInclude Include="MapChoiceScene.h" />
     <ClInclude Include="PickingHelper.h" />
     <ClInclude Include="Text.h" />
@@ -164,6 +166,7 @@
     <ClInclude Include="TitleScene.h" />
     <ClInclude Include="Wall.h" />
     <ClInclude Include="WFSMap1Scene.h" />
+    <ClInclude Include="WFSMap2Scene.h" />
     <ClInclude Include="WolfensteinFacuri.h" />
   </ItemGroup>
   <ItemGroup>
@@ -172,6 +175,8 @@
     <ClCompile Include="ChoiceCube.cpp" />
     <ClCompile Include="CGameFramework.cpp" />
     <ClCompile Include="ColliderManager.cpp" />
+    <ClCompile Include="gun.cpp" />
+    <ClCompile Include="JointPlayer.cpp" />
     <ClCompile Include="MapChoiceScene.cpp" />
     <ClCompile Include="PickingHelper.cpp" />
     <ClCompile Include="Text.cpp" />
@@ -196,6 +201,7 @@
     <ClCompile Include="TitleScene.cpp" />
     <ClCompile Include="Wall.cpp" />
     <ClCompile Include="WFSMap1Scene.cpp" />
+    <ClCompile Include="WFSMap2Scene.cpp" />
     <ClCompile Include="WolfensteinFacuri.cpp" />
   </ItemGroup>
   <ItemGroup>

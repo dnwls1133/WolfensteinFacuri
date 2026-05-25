@@ -2,23 +2,23 @@
 #include "Wall.h"
 #include "Enemy.h"
 #include "JointPlayer.h"
-#include "WFSMap1Scene.h"
+#include "WFSMap2Scene.h"
 
 
-WFSMap1Scene::WFSMap1Scene(CColliderManager* pCollider, CCamera* pCamera)
+WFSMap2Scene::WFSMap2Scene(CColliderManager* pCollider, CCamera* pCamera)
 	: CScene(pCollider, pCamera)
 {
 }
 
-WFSMap1Scene::~WFSMap1Scene()
+WFSMap2Scene::~WFSMap2Scene()
 {
 	if (m_pStairMesh) m_pStairMesh->Release();
 }
 
 
-void WFSMap1Scene::Animate(float fElapsedTime)
+void WFSMap2Scene::Animate(float fElapsedTime)
 {
-	if(m_nEnemyCount <= 0)
+	if (m_nEnemyCount <= 0)
 	{
 		// 모든 적이 제거되었을 때 승리 처리
 		if (m_pPlayer) m_pPlayer->SetWon();
@@ -48,7 +48,7 @@ void WFSMap1Scene::Animate(float fElapsedTime)
 
 }
 
-void WFSMap1Scene::ProcessInput(const InputState& InputState, float fElapsedTime)
+void WFSMap2Scene::ProcessInput(const InputState& InputState, float fElapsedTime)
 {
 	if (!m_pJointPlayer) return;
 	const UCHAR* pKeyBuffer = InputState.keys;
@@ -91,10 +91,10 @@ void WFSMap1Scene::ProcessInput(const InputState& InputState, float fElapsedTime
 		float newX = pos.x + dx;
 		float edgeX = pos.x + dx + (dx >= 0 ? kRadius : -kRadius);
 		bool wallX = IsWall(edgeX, pos.z - kRadius) ||
-			          IsWall(edgeX, pos.z) ||
-					  IsWall(edgeX, pos.z + kRadius);
+			IsWall(edgeX, pos.z) ||
+			IsWall(edgeX, pos.z + kRadius);
 
-		
+
 		if (!wallX) {
 			float nextFloor = GetFloorY(newX, pos.z);
 			if (nextFloor - currFloor <= kMaxStepUp) {
@@ -109,7 +109,7 @@ void WFSMap1Scene::ProcessInput(const InputState& InputState, float fElapsedTime
 		float newZ = pos.z + dz;
 		float edgeZ = pos.z + dz + (dz >= 0 ? kRadius : -kRadius);
 		bool wallZ = IsWall(pos.x - kRadius, edgeZ) ||
-				 IsWall(pos.x, edgeZ) ||
+			IsWall(pos.x, edgeZ) ||
 			IsWall(pos.x + kRadius, edgeZ);
 		if (!wallZ) {
 			float nextFloor = GetFloorY(pos.x, newZ);
@@ -121,7 +121,7 @@ void WFSMap1Scene::ProcessInput(const InputState& InputState, float fElapsedTime
 				}
 			}
 		}
-			
+
 
 		m_pJointPlayer->SetPosition(pos.x, pos.y, pos.z);
 		bMoving = true;
@@ -141,7 +141,7 @@ void WFSMap1Scene::ProcessInput(const InputState& InputState, float fElapsedTime
 			m_pJointPlayer->m_fLastFireTime = 0.0f; // 발사 후 마지막 발사 시간 초기화
 			m_pJointPlayer->FireMissile(); // 미사일 발사
 		}
-		
+
 	}
 
 	if (pKeyBuffer[VK_F2] & 0x80)
@@ -162,7 +162,7 @@ void WFSMap1Scene::ProcessInput(const InputState& InputState, float fElapsedTime
 
 }
 
-bool WFSMap1Scene::IsWall(float wx, float wz) const
+bool WFSMap2Scene::IsWall(float wx, float wz) const
 {
 
 	float offsetX = -m_nMapWidth * kTileSize * 0.5f;
@@ -172,13 +172,13 @@ bool WFSMap1Scene::IsWall(float wx, float wz) const
 	int col = (int)floorf((wx - offsetX) / kTileSize + 0.5f);
 	int row = (int)floorf((wz - offsetZ) / kTileSize + 0.5f);
 
-	if(col < 0 || col >= m_nMapWidth || row < 0 || row >= m_nMapHeight)
+	if (col < 0 || col >= m_nMapWidth || row < 0 || row >= m_nMapHeight)
 		return true;
 
 	return m_vGridData[row][col] == '#';
 }
 
-float WFSMap1Scene::GetFloorY(float wx, float wz) const
+float WFSMap2Scene::GetFloorY(float wx, float wz) const
 {
 	float offsetX = -m_nMapWidth * kTileSize * 0.5f;
 	float offsetZ = -m_nMapHeight * kTileSize * 0.5f;
@@ -196,14 +196,14 @@ float WFSMap1Scene::GetFloorY(float wx, float wz) const
 	return 0.0f;
 }
 
-void WFSMap1Scene::UpdateCamera(float fElapsedTime)
+void WFSMap2Scene::UpdateCamera(float fElapsedTime)
 {
 	CScene::UpdateCamera(fElapsedTime);
 }
 
 
 
-void WFSMap1Scene::BuildSceneObjects()
+void WFSMap2Scene::BuildSceneObjects()
 {
 	m_pStairMesh = new CStairMesh(m_pd3dDevice, m_pd3dCommandList, 10.0f, 5.0f, 10.0f);
 
@@ -222,7 +222,7 @@ void WFSMap1Scene::BuildSceneObjects()
 
 
 
-	if (!LoadMapFile(L"\\mapdata\\level1.txt"))
+	if (!LoadMapFile(L"\\mapdata\\level2.txt"))
 	{
 		::OutputDebugStringA("[WFSMap1] level1.txt 로드 실패 - 빈 맵\n");
 		return;
@@ -238,7 +238,7 @@ void WFSMap1Scene::BuildSceneObjects()
 }
 
 
-bool WFSMap1Scene::LoadMapFile(const wchar_t* relPath)
+bool WFSMap2Scene::LoadMapFile(const wchar_t* relPath)
 {
 	WCHAR szFullPath[MAX_PATH];
 	::GetModuleFileNameW(NULL, szFullPath, MAX_PATH);
@@ -264,7 +264,7 @@ bool WFSMap1Scene::LoadMapFile(const wchar_t* relPath)
 		if (!std::getline(ifs, row)) row.clear();
 
 		if ((int)row.size() < m_nMapWidth)
-			row.append(m_nMapWidth - row.size(), ' '); 
+			row.append(m_nMapWidth - row.size(), ' ');
 		else if ((int)row.size() > m_nMapWidth)
 			row.resize(m_nMapWidth);
 
@@ -275,11 +275,11 @@ bool WFSMap1Scene::LoadMapFile(const wchar_t* relPath)
 	return true;
 }
 
-void WFSMap1Scene::SpawnFromGrid()
+void WFSMap2Scene::SpawnFromGrid()
 {
 	const float worldOffsetX = -m_nMapWidth * kTileSize * 0.5f;
 	const float worldOffsetZ = -m_nMapHeight * kTileSize * 0.5f;
-	
+
 	for (int z = 0; z < m_nMapHeight; ++z) {
 		for (int x = 0; x < m_nMapWidth; ++x) {
 			float wx = worldOffsetX + x * kTileSize;
@@ -304,31 +304,31 @@ void WFSMap1Scene::SpawnFromGrid()
 
 }
 
-void WFSMap1Scene::SpawnWall(float wx, float wz)
+void WFSMap2Scene::SpawnWall(float wx, float wz)
 {
 	XMFLOAT4X4 world;
 	XMStoreFloat4x4(&world, XMMatrixTranslation(wx, 0.0f, wz));
-	m_wallInstanceBuffer.AddInstance(world, XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f));
+	m_wallInstanceBuffer.AddInstance(world, XMFLOAT4(0.4f, 0.25f, 0.15f, 1.0f));
 
 	CWall* pWall = new CWall();
 	pWall->SetMesh(m_pWallMesh);
 	pWall->SetPosition(wx, 0.0f, wz);
 	pWall->SetObjectType(OBJ_WALL);
 	pWall->SetInstancedOnly(true); // 인스턴싱 전용으로 설정
-	pWall->SetColor(XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f));
+	//pWall->SetColor(XMFLOAT4(1.f, 0.0f, 0.7f, 1.0f));
 	pWall->GenerateBoundingBox();
 	AddObject(pWall);
 
 }
 
-void WFSMap1Scene::SpawnFloor(float wx, float wz, float fHeight)
+void WFSMap2Scene::SpawnFloor(float wx, float wz, float fHeight)
 {
 	XMFLOAT4X4 world;
-	XMStoreFloat4x4(&world, XMMatrixTranslation(wx, fHeight -0.5f, wz));
-	m_floorInstanceBuffer.AddInstance(world, XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f));
+	XMStoreFloat4x4(&world, XMMatrixTranslation(wx, fHeight - 0.5f, wz));
+	m_floorInstanceBuffer.AddInstance(world, XMFLOAT4(0.3f, 0.2f, 0.1f, 1.0f));
 }
 
-void WFSMap1Scene::SpawnStair(float wx, float wz)
+void WFSMap2Scene::SpawnStair(float wx, float wz)
 {
 	CGameObject* pStair = new CGameObject();
 	pStair->SetMesh(m_pStairMesh);
@@ -341,7 +341,7 @@ void WFSMap1Scene::SpawnStair(float wx, float wz)
 	AddObject(pStair);
 }
 
-void WFSMap1Scene::SpawnEnemy(float wx, float wz)
+void WFSMap2Scene::SpawnEnemy(float wx, float wz)
 {
 	CEnemy* pEnemy = new CEnemy();
 	pEnemy->SetMesh(m_pEnemyMesh);
@@ -361,7 +361,7 @@ void WFSMap1Scene::SpawnEnemy(float wx, float wz)
 	++m_nEnemyCount;
 }
 
-void WFSMap1Scene::PlacePlayer(float wx, float wz)
+void WFSMap2Scene::PlacePlayer(float wx, float wz)
 {
 	if (!m_pJointPlayer) return;
 	m_pJointPlayer->SetPosition(wx, 0.0f, wz);

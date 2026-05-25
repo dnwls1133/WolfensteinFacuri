@@ -25,19 +25,22 @@ class CDiffusedVertex : public CVertex
 {
 protected:
 	XMFLOAT4 m_xmf4Diffuse; // RGBA 색상
+	XMFLOAT3 m_xmf3Normal;
 
 public:
 	CDiffusedVertex()
-		: m_xmf4Diffuse(0.0f, 0.0f, 0.0f, 0.0f) {
+		: m_xmf4Diffuse(0.0f, 0.0f, 0.0f, 0.0f), m_xmf3Normal(0,1,0) {
 		m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	}
-	CDiffusedVertex(float x, float y, float z, XMFLOAT4 xmf4Diffuse)
-		: m_xmf4Diffuse(xmf4Diffuse) {
+	CDiffusedVertex(float x, float y, float z, XMFLOAT4 color,
+		XMFLOAT3 normal = XMFLOAT3(0, 1, 0))
+		: m_xmf4Diffuse(color), m_xmf3Normal(normal) {
 		m_xmf3Position = XMFLOAT3(x, y, z);
 	}
-	CDiffusedVertex(XMFLOAT3 xmf3Position, XMFLOAT4 xmf4Diffuse)
-		: m_xmf4Diffuse(xmf4Diffuse) {
-		m_xmf3Position = xmf3Position;
+	CDiffusedVertex(XMFLOAT3 pos, XMFLOAT4 color,
+		XMFLOAT3 normal = XMFLOAT3(0, 1, 0))
+		: m_xmf4Diffuse(color), m_xmf3Normal(normal) {
+		m_xmf3Position = pos;
 	}
 	~CDiffusedVertex() {}
 };
@@ -86,6 +89,7 @@ protected:
    // ────────────────────────────────────────────────────
 
 	XMFLOAT3 m_xmf3Extents = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	XMFLOAT3 m_xmf3LocalCenter = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
 	// 정점 데이터로부터 OBB Extents 계산 (생성자에서 호출)
 	void CalculateBoundingBoxExtents(const CDiffusedVertex* pVertices, UINT nVertices);
@@ -98,7 +102,7 @@ public:
 	void ReleaseUploadBuffers();
 
 	XMFLOAT3 GetBoundingBoxExtents() const;
-
+	XMFLOAT3 GetLocalCenter() const { return m_xmf3LocalCenter; }
 	// Render 시그니처: HDC -> ID3D12GraphicsCommandList*
 	virtual void Render(ID3D12GraphicsCommandList* pd3dCommandList);
 
@@ -195,4 +199,13 @@ class CGunMesh : public CMesh
 	CGunMesh(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList,
 		float fScale);
 	virtual ~CGunMesh();
+};
+
+class CCrosshairMesh : public CMesh
+{
+public:
+	CCrosshairMesh(ID3D12Device* , ID3D12GraphicsCommandList*,
+		float fHalfLen = 0.003f,
+		float fThick = 0.004f,
+		XMFLOAT4 color = XMFLOAT4(1, 1, 1, 1));
 };

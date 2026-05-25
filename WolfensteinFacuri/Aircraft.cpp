@@ -76,7 +76,7 @@ void CAircraft::Update()
 		return; // �� �̻� ������Ʈ�� �ʿ䰡 �����Ƿ� �Լ��� �����մϴ�.
 	}
 
-	//CGameObject::Update(); // �÷��̾��� ���� ��� ����
+	
 
 	XMFLOAT4 currentRotation = GetRotation(); // �÷��̾��� ȸ�� ���� ��������
 	XMFLOAT4 targetRotation = { 0.0f, currentRotation.y, 0.0f, currentRotation.w }; // ��ǥ ȸ�� (��ġ�� ���� 0���� ����)
@@ -89,10 +89,6 @@ void CAircraft::Update()
 	XMFLOAT4 lerpRotation;
 	XMStoreFloat4(&lerpRotation, vLerp);
 	SetRotation(lerpRotation); // �÷��̾��� ȸ���� ������ ȸ������ ������Ʈ
-
-
-
-	//m_fPlayTime += TIMER->GetTimeElapsed(); // �÷��̾ ����ִ� �ð� ����
 
 	CPlayer::Update();
 

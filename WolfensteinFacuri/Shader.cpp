@@ -22,7 +22,7 @@ D3D12_RASTERIZER_DESC CShader::CreateRasterizerState()
 	D3D12_RASTERIZER_DESC d3dRasterizerDesc;
 	::ZeroMemory(&d3dRasterizerDesc, sizeof(D3D12_RASTERIZER_DESC));
 	d3dRasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
-	d3dRasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
+	d3dRasterizerDesc.CullMode = D3D12_CULL_MODE_NONE;
 	d3dRasterizerDesc.FrontCounterClockwise = FALSE;
 	d3dRasterizerDesc.DepthBias = 0;
 	d3dRasterizerDesc.DepthBiasClamp = 0.0f;
@@ -268,13 +268,16 @@ CDiffusedShader::~CDiffusedShader()
 
 D3D12_INPUT_LAYOUT_DESC CDiffusedShader::CreateInputLayout()
 {
-	UINT nInputElementDesce = 2;
+	UINT nInputElementDesce = 3;
 	D3D12_INPUT_ELEMENT_DESC* pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDesce];
 	pd3dInputElementDescs[0] = { "POSITION" , 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,0,
 	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA , 0};
 
 	pd3dInputElementDescs[1] = { "COLOR" , 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,12,
 	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA , 0};
+
+	pd3dInputElementDescs[2] = { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 28,
+	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
 	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
@@ -339,7 +342,7 @@ CInstancedShader::~CInstancedShader()
 
 D3D12_INPUT_LAYOUT_DESC CInstancedShader::CreateInputLayout()
 {
-	UINT nInputElementDescs = 7;
+	UINT nInputElementDescs = 8;
 	D3D12_INPUT_ELEMENT_DESC* pd3dInputElementDescs = new D3D12_INPUT_ELEMENT_DESC[nInputElementDescs];
 
 	// 슬롯 0 : 정점 데이터 (위치 + 색상)
@@ -347,19 +350,21 @@ D3D12_INPUT_LAYOUT_DESC CInstancedShader::CreateInputLayout()
 		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA , 0 };
 	pd3dInputElementDescs[1] = { "COLOR" , 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,12,
 		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA , 0 };
+	pd3dInputElementDescs[2] = { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 28,
+		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	// 슬롯 1 : 인스턴스 데이터 (월드 행렬 4x4)
-	pd3dInputElementDescs[2] = { "INSTWORLD" , 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,0,
+	pd3dInputElementDescs[3] = { "INSTWORLD" , 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,0,
 		D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA , 1 };
-	pd3dInputElementDescs[3] = { "INSTWORLD" , 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,16,
+	pd3dInputElementDescs[4] = { "INSTWORLD" , 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,16,
 		D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA , 1 };
-	pd3dInputElementDescs[4] = { "INSTWORLD" , 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,32,
+	pd3dInputElementDescs[5] = { "INSTWORLD" , 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,32,
 		D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA , 1 };
-	pd3dInputElementDescs[5] = { "INSTWORLD" , 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,48,
+	pd3dInputElementDescs[6] = { "INSTWORLD" , 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,48,
 		D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA , 1 };
 
 	// 인스턴스 생상
-	pd3dInputElementDescs[6] = { "INSTCOLOR" , 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,64,
+	pd3dInputElementDescs[7] = { "INSTCOLOR" , 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,64,
 		D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA , 1 };
 
 	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
@@ -392,4 +397,54 @@ void CInstancedShader::CreateShader(ID3D12Device* pd3dDevice, ID3D12RootSignatur
 	m_nPipelineStates = 1;
 	m_ppd3dPipelineStates = new ID3D12PipelineState * [m_nPipelineStates];
 	CShader::CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+}
+
+
+
+D3D12_INPUT_LAYOUT_DESC CCrosshairShader::CreateInputLayout()
+{
+	UINT nElements = 2;
+	D3D12_INPUT_ELEMENT_DESC* pd3dInputElementDescs = new
+		D3D12_INPUT_ELEMENT_DESC[nElements];
+
+	pd3dInputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT,
+		0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	pd3dInputElementDescs[1] = { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT,
+		0, 8, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	D3D12_INPUT_LAYOUT_DESC d3dInputLayoutDesc;
+	d3dInputLayoutDesc.pInputElementDescs = pd3dInputElementDescs;
+	d3dInputLayoutDesc.NumElements = nElements;
+	return d3dInputLayoutDesc;
+}
+
+D3D12_SHADER_BYTECODE CCrosshairShader::CreateVertexShader(ID3DBlob** ppd3dShaderBlob)
+{
+	return CompileShaderFromFile(const_cast < WCHAR*>(L"Shaders.hlsl")
+		, const_cast<LPSTR>("VSCrosshair"), const_cast<LPSTR>("vs_5_1"), ppd3dShaderBlob);
+}
+
+D3D12_SHADER_BYTECODE CCrosshairShader::CreatePixelShader(ID3DBlob** ppd3dShaderBlob)
+{
+	return CompileShaderFromFile(const_cast < WCHAR*>(L"Shaders.hlsl")
+		, const_cast<LPSTR>("PSCrosshair"), const_cast<LPSTR>("ps_5_1"), ppd3dShaderBlob);
+}
+
+D3D12_RASTERIZER_DESC CCrosshairShader::CreateRasterizerState()
+{
+	D3D12_RASTERIZER_DESC d = 
+		CDiffusedShader::CreateRasterizerState();
+	d.CullMode = D3D12_CULL_MODE_NONE;
+	return d;
+
+}
+
+D3D12_DEPTH_STENCIL_DESC CCrosshairShader::CreateDepthStencilState()
+{
+	D3D12_DEPTH_STENCIL_DESC d = { };
+	d.DepthEnable = FALSE;
+	d.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	d.StencilEnable = FALSE;
+	return d;
 }
